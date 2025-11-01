@@ -12,7 +12,7 @@ var chan;  // declare vars at top
 ~m1.tryPerform(\free);
 ~m1 = MixerChannel.new(\m1, s, 2, 2, outbus: 0);
 ~lcxlParam[\b8_s8_f] = { |x| ~m1.level_(x.linlin(0, 127, 0.0, 1.0)) };
-~apcBindParam.(\master_f, { |x| ~m1.level_(x) });
+// ~apcBindParam.(\master_f, { |x| ~m1.level_(x) });
 
 // tracks. all outbus -> master inbus
 ~t1  = MixerChannel.new(\t1,  s, 2, 2, outbus: ~m1.inbus);
@@ -31,63 +31,63 @@ var chan;  // declare vars at top
 // example controller binds. keep your originals if preferred
 ~lcxlParam[\b1_s1_f] = { |x| ~t1.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s1_r3] = { |x| ~t1.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s1_f,  { |x| ~t1.level_(x) });
-~apcBindParam.(\b0_s1_r1, { |x| ~t1.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s1_f,  { |x| ~t1.level_(x) });
+// ~apcBindParam.(\b0_s1_r1, { |x| ~t1.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b1_s2_f] = { |x| ~t2.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s2_r3] = { |x| ~t2.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s2_f,  { |x| ~t2.level_(x) });
-~apcBindParam.(\b0_s2_r1, { |x| ~t2.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s2_f,  { |x| ~t2.level_(x) });
+// ~apcBindParam.(\b0_s2_r1, { |x| ~t2.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b1_s3_f] = { |x| ~t3.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s3_r3] =  { |x| ~t3.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s3_f,  { |x| ~t3.level_(x) });
-~apcBindParam.(\b0_s3_r1, { |x| ~t3.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s3_f,  { |x| ~t3.level_(x) });
+// ~apcBindParam.(\b0_s3_r1, { |x| ~t3.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b1_s4_f] = { |x| ~t4.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s4_r3] = { |x| ~t4.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s4_f,  { |x| ~t4.level_(x) });
-~apcBindParam.(\b0_s4_r1, { |x| ~t4.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s4_f,  { |x| ~t4.level_(x) });
+// ~apcBindParam.(\b0_s4_r1, { |x| ~t4.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b1_s5_f] = { |x| ~t5.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s5_r3] = { |x| ~t5.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s5_f,  { |x| ~t5.level_(x) });
-~apcBindParam.(\b0_s5_r1, { |x| ~t5.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s5_f,  { |x| ~t5.level_(x) });
+// ~apcBindParam.(\b0_s5_r1, { |x| ~t5.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b1_s6_f] = { |x| ~t6.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s6_r3] = { |x| ~t6.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s6_f,  { |x| ~t6.level_(x) });
-~apcBindParam.(\b0_s6_r1, { |x| ~t6.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s6_f,  { |x| ~t6.level_(x) });
+// ~apcBindParam.(\b0_s6_r1, { |x| ~t6.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b1_s7_f] =  { |x| ~t7.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s7_r3] = { |x| ~t7.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s7_f,  { |x| ~t7.level_(x) });
-~apcBindParam.(\b0_s7_r1, { |x| ~t7.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s7_f,  { |x| ~t7.level_(x) });
+// ~apcBindParam.(\b0_s7_r1, { |x| ~t7.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b1_s8_f] =  { |x| ~t8.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b1_s8_r3] = { |x| ~t8.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b0_s8_f,  { |x| ~t8.level_(x) });
-~apcBindParam.(\b0_s8_r1, { |x| ~t8.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b0_s8_f,  { |x| ~t8.level_(x) });
+// ~apcBindParam.(\b0_s8_r1, { |x| ~t8.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b2_s1_f] = { |x| ~t9.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b2_s1_r3] = { |x| ~t9.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b1_s1_f,  { |x| ~t9.level_(x) });
-~apcBindParam.(\b1_s1_r1, { |x| ~t9.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b1_s1_f,  { |x| ~t9.level_(x) });
+// ~apcBindParam.(\b1_s1_r1, { |x| ~t9.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b2_s2_f] = { |x| ~t10.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b2_s2_r3] = { |x| ~t10.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b1_s2_f,  { |x| ~t10.level_(x) });
-~apcBindParam.(\b1_s2_r1, { |x| ~t10.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b1_s2_f,  { |x| ~t10.level_(x) });
+// ~apcBindParam.(\b1_s2_r1, { |x| ~t10.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b2_s3_f] = { |x| ~t11.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b2_s3_r3] = { |x| ~t11.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b1_s3_f,  { |x| ~t11.level_(x) });
-~apcBindParam.(\b1_s3_r1, { |x| ~t11.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b1_s3_f,  { |x| ~t11.level_(x) });
+// ~apcBindParam.(\b1_s3_r1, { |x| ~t11.pan_(x.linlin(0, 1, -1, 1)) });
 
 ~lcxlParam[\b2_s4_f] = { |x| ~t12.level_(x.linlin(0, 127, 0.0, 1.0)) };
 ~lcxlParam[\b2_s4_r3] = { |x| ~t12.pan_(x.linlin(0, 1, -1, 1)) };
-~apcBindParam.(\b1_s4_f,  { |x| ~t12.level_(x) });
-~apcBindParam.(\b1_s4_r1, { |x| ~t12.pan_(x.linlin(0, 1, -1, 1)) });
+// ~apcBindParam.(\b1_s4_f,  { |x| ~t12.level_(x) });
+// ~apcBindParam.(\b1_s4_r1, { |x| ~t12.pan_(x.linlin(0, 1, -1, 1)) });
 
 // returns. all outbus -> master inbus
 ~r1.tryPerform(\free);
