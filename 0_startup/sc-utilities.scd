@@ -186,7 +186,7 @@ Ndef(\mySine, {
     var pan = MouseY.kr(-1, 1, 1);
     Pan2.ar(SinOsc.ar(freq, 0, 0.2), pan);
 });
-)
+
 Ndef(\mySine).clear;
 // 4. Play the Ndef through the ddwMixerChannel
 ~t1.play(Ndef(\mySine));
