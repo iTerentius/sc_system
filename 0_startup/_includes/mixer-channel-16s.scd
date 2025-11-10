@@ -101,11 +101,11 @@ var chan;  // declare vars at top
 // return faders
 //~lcxlParam[\b2_s5_f] = { |x| ~r1.level_(x.linlin(0, 127, 0.0, 1.0)) };
 //~lcxlParam[\b2_s6_f] = { |x| ~r2.level_(x.linlin(0, 127, 0.0, 1.0)) };
- ~apcBindParam[\b1_s5_f] =  { |x| ~r1.level_(x) };
- ~apcBindParam[\b1_s6_f] =  { |x| ~r2.level_(x) };
+ ~apcBindParam.(\b1_s5_f, { |x| ~r1.level_(x) });
+ ~apcBindParam.(\b1_s6_f, { |x| ~r2.level_(x) });
 
 // r1 reverb. read bus explicitly and return wet. do not call Out or ReplaceOut here
-~r1.playfx({ |in|
+~r1_fx = ~r1.playfx({ |in|
     var sig, wet;  // declare vars at top
     sig = In.ar(~r1.inbus.index, 2);
     wet = FreeVerb2.ar(sig[0], sig[1], mix: 1, room: 0.8, damp: 0.2);
@@ -113,7 +113,7 @@ var chan;  // declare vars at top
 });
 
 // r2 delay. same pattern
-~r2.playfx({ |in|
+~r2_fx = ~r2.playfx({ |in|
     var sig, wet;
     sig = In.ar(~r2.inbus.index, 2);
     wet = CombL.ar(sig, maxdelaytime: 0.4, delaytime: 0.25, decaytime: 0.6);
