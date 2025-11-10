@@ -101,8 +101,8 @@ var chan;  // declare vars at top
 // return faders
 //~lcxlParam[\b2_s5_f] = { |x| ~r1.level_(x.linlin(0, 127, 0.0, 1.0)) };
 //~lcxlParam[\b2_s6_f] = { |x| ~r2.level_(x.linlin(0, 127, 0.0, 1.0)) };
-~apcBindParam[\b1_s5_f] =  { |x| ~r1.level_(x) };
-~apcBindParam[\b1_s6_f] =  { |x| ~r2.level_(x) };
+~apcBindParam.(\b1_s5_f, { |x| ~r1.level_(x) });
+~apcBindParam.(\b1_s6_f, { |x| ~r2.level_(x) });
 
 // r1 reverb. read bus explicitly and return wet. do not call Out or ReplaceOut here
 ~r1_fx = ~r1.playfx({ |in|
