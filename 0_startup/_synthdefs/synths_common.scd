@@ -343,6 +343,57 @@ SynthDef(\gb1, { |out=0, amp=1, ampLag=0.02, gate=1,
 	Out.ar(out, sig * amp * ampEnv);
 }).add;
 );
+
+// a custom envelope
+~g1env = Env([0, 1, 0], [0.5, 0.5], [8, -8]);
+~g1envbuf = Buffer.sendCollection(s, ~g1env.discretize, 1);
+(
+SynthDef(\gin1, { |out, gate = 1, amp = 1, envbuf |
+    var pan, env;
+    // use mouse x to control panning
+    pan = MouseX.kr(-1, 1);
+    env = EnvGen.kr(
+        Env([0, 1, 0], [1, 1], \sin, 1),
+        gate,
+        levelScale: amp,
+        doneAction: Done.freeSelf);
+    Out.ar(out,
+        GrainIn.ar(2, Impulse.kr(32), 1, PinkNoise.ar * 0.05, pan, envbuf) * env)
+}).add;
+);
+
+(
+// 2025-11-12 sidechain ducking
+
+SynthDef(\duck, { |in=0, side=0, out=0, thresh=0.1, ratio=10, attack=0.01, release=0.1, makeup=1|
+    var sig, sideSig, sideMono, env, cond, gain;
+
+    sig      = In.ar(in, 2);    // stereo signal to be ducked
+    sideSig  = In.ar(side, 2);  // stereo sidechain signal
+    sideMono = Mix(sideSig);    // collapse to mono for envelope tracking
+
+    // envelope follower with smoothing
+    env = LagUD.kr(
+        Amplitude.kr(sideMono, 0.01, 0.1),
+        attack,
+        release
+    );
+
+    // cond is a control rate signal, 0 when below threshold, >0 when above
+    cond = env > thresh;
+
+    // Select.kr chooses index 0 or 1 based on cond (0 or 1)
+    gain = Select.kr(
+        cond,  // when 0 -> first element, when 1 -> second
+        [
+            1,                                      // below threshold
+            (env / thresh).reciprocal.pow(ratio)   // above threshold
+        ]
+    );
+
+    Out.ar(out, sig * gain * makeup);
+}).add;
+);
 /* slice_fx for ddwMixerChannel .playfx stereo 2025-10-08 */
 
 ~sliceFX_makeCtrlBuses = {
