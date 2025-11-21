@@ -85,9 +85,28 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
 /* ---------- MIDI Out + Generic Mode ---------- */
 ~apcForceAPCOut = {
-    var out, dev, nam;
+    var out, dev, nam, apcSrc, apcInport;
     if(MIDIClient.initialized.not) { MIDIClient.init; };
-    MIDIIn.connectAll;
+
+    if(~apcMidiInDone.isNil) { ~apcMidiInDone = false; };
+    if(~apcMidiInDone.not) {
+        apcSrc = MIDIClient.sources.detect { |ep|
+            var d, n;
+            d = ep.device.asString;
+            n = ep.name.asString;
+            d.contains("APC40") or: { n.contains("APC40") }
+        };
+
+        if(apcSrc.notNil) {
+            apcInport = 0;
+            { MIDIIn.connect(apcInport, apcSrc) }.try;
+            ["[APC] MIDIIn connected:", apcSrc.device, apcSrc.name].postln;
+            ~apcMidiInDone = true;
+        } {
+            "[APC] source not found for MIDIIn".warn;
+        };
+    };
+
     out = nil;
     MIDIClient.destinations.do { |ep|
         dev = ep.device !? { ep.device.asString } ?? "";
@@ -510,7 +529,6 @@ CmdPeriod.remove(~apcCmdPeriodHook);
 ~apcCmdPeriodHook = {
     AppClock.sched(0.0, {
         if(MIDIClient.initialized.not) { MIDIClient.init; };
-        MIDIIn.connectAll;
         ~apcForceAPCOut.();
         ~apcIntroGenericMode.();
         ~apcInstallGridListener.();

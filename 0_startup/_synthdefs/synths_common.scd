@@ -352,7 +352,7 @@ SynthDef(\gin1, { |out, fxMix = 0.5, trigRate = 40, grainDur = 0.08,
     pan = 0.0, amp = 0.3, envbufnum = 0|
     var dry, mono, wet, outSig;  // vars at top
 
-    // 'out' is the channel’s bus that playfx fills in
+    // 'out' is the channel's bus that playfx fills in
     dry  = In.ar(out, 2);
     mono = (dry[0] + dry[1]) * 0.5;  // GrainIn wants mono in
 
