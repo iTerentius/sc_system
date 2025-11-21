@@ -310,6 +310,39 @@ SynthDef(\slice_fx, { |inbus=0, out=0, bufSecs=2, nSlices=8, sliceIndex=0, rate=
     Out.ar(out, XFade2.ar(dry, wet, (mix * 2) - 1));
 }).add;
 );
+
+(
+SynthDef(\gb1, { |out=0, amp=1, ampLag=0.02, gate=1,
+	freq=220, trig_rate=8, grain_dur=0.05, buf, env, rate=1, pan_rate=10, trig_enable=1|
+	var trig, pos, sig, ampEnv;
+
+	// optional: smooth mixer fades on \amp
+	amp = Lag.kr(amp, ampLag);
+
+	// start/stop grain triggers without freeing the node
+	trig = Impulse.kr(trig_rate) * trig_enable;  // 0 = no new grains, 1 = normal
+
+	// scan the buffer once per node lifetime; remove doneAction here for manual stop
+	pos = Line.kr(0, 1, BufDur.ir(buf), doneAction: 2);
+
+	sig = GrainBuf.ar(
+		numChannels: 2,
+		trigger: trig,
+		dur: grain_dur,
+		sndbuf: buf,
+		rate: rate.midiratio,
+		pos: pos,
+		interp: 2,
+		pan: LFNoise1.kr(pan_rate),
+		envbufnum: env
+	);
+
+	// manual stop via gate -> fade out then free
+	ampEnv = EnvGen.kr(Env.asr(0.01, 1, 0.25), gate, doneAction: 2);
+
+	Out.ar(out, sig * amp * ampEnv);
+}).add;
+);
 /* slice_fx for ddwMixerChannel .playfx stereo 2025-10-08 */
 
 ~sliceFX_makeCtrlBuses = {

@@ -100,16 +100,17 @@ MIDIdef.stop(\printStop,   { |srcID| ~pp.("stop",  ~srcInfo.(srcID)); });
 MIDIdef.continue(\printCont, { |srcID| ~pp.("continue", ~srcInfo.(srcID)); });
 
 // Pick by name first, then fall back to index 0
-devName = "IAC Driver";   // change to your device name
-portName = "Main";        // change to your device port
-~mOut = MIDIOut.newByName(devName, portName);
-
-if (~mOut.isNil) {
-    "MIDIOut.newByName failed, falling back to index 0".warn;
-    fallbackIndex = 0;
-    ~mOut = MIDIOut.new(fallbackIndex);
-    ~mOut.connect(fallbackIndex);
-};
+//devName = "IAC Driver";   // change to your device name
+//portName = "Main";        // change to your device port
+//~mOut = MIDIOut.newByName(devName, portName);
+~mOut = MIDIOut.new(0);
+~mOut.connect(0);
+//if (~mOut.isNil) {
+//    "MIDIOut.newByName failed, falling back to index 0".warn;
+//    fallbackIndex = 0;
+//    ~mOut = MIDIOut.new(fallbackIndex);
+//    ~mOut.connect(fallbackIndex);
+//};
 
 // Match your SC scheduling latency so tight with audio clock
 ~mOut.latency = s.latency;  // common default is 0.2

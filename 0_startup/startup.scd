@@ -25,7 +25,7 @@ s.waitForBoot {
     // "_includes/_midi-ctrl/midi-device-loader.scd".loadRelative; // Launch-controls for just params.
 
     // --- APC40mk2 ----
-      "_includes/_midi-ctrl/apc40/apc40mk2_loader.scd".loadRelative; // Launch-controls for just params.
+    "_includes/_midi-ctrl/apc40/apc40mk2_loader.scd".loadRelative; // Launch-controls for just params.
 
     // --- Launch Controls ---
     //"_includes/midi-setup.scd".loadRelative;

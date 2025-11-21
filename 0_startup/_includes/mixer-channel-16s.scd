@@ -124,7 +124,19 @@ var chan;  // declare vars at top
 ~perc = MixerChannel.new(\perc, s, 2, 2, outbus: ~t1.inbus);
 ~pbd1 = MixerChannel.new(\pbd1, s, 2, 2, outbus: ~perc.inbus);
 ~pbd2 = MixerChannel.new(\pbd2, s, 2, 2, outbus: ~perc.inbus);
+~psd1 = MixerChannel.new(\psd1, s, 2, 2, outbus: ~perc.inbus);
+~psd2 = MixerChannel.new(\psd2, s, 2, 2, outbus: ~perc.inbus);
 ~phh1 = MixerChannel.new(\phh1, s, 2, 2, outbus: ~perc.inbus);
+~phh2 = MixerChannel.new(\phh2, s, 2, 2, outbus: ~perc.inbus);
+~pcp1 = MixerChannel.new(\pcp1, s, 2, 2, outbus: ~perc.inbus);
+~pcp2 = MixerChannel.new(\pcp2, s, 2, 2, outbus: ~perc.inbus);
+~ptm1 = MixerChannel.new(\ptm1, s, 2, 2, outbus: ~perc.inbus);
+~ptm2 = MixerChannel.new(\ptm2, s, 2, 2, outbus: ~perc.inbus);
+~ptm3 = MixerChannel.new(\ptm3, s, 2, 2, outbus: ~perc.inbus);
+~pcr1 = MixerChannel.new(\pcr1, s, 2, 2, outbus: ~perc.inbus);
+~pcr2 = MixerChannel.new(\pcr2, s, 2, 2, outbus: ~perc.inbus);
+~pex1 = MixerChannel.new(\pex1, s, 2, 2, outbus: ~perc.inbus);
+~pex2 = MixerChannel.new(\pex2, s, 2, 2, outbus: ~perc.inbus);
 
 // convenience. create or replace a post send from any track to any return
 ~ensurePostSend = { |fromChan, toChan, level = 0.0|
