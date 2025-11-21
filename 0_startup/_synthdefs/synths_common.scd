@@ -323,7 +323,7 @@ SynthDef(\gb1, { |out=0, amp=1, ampLag=0.02, gate=1,
 	trig = Impulse.kr(trig_rate) * trig_enable;  // 0 = no new grains, 1 = normal
 
 	// scan the buffer once per node lifetime; remove doneAction here for manual stop
-	pos = Line.kr(0, 1, BufDur.ir(buf), doneAction: 2);
+	pos = Line.kr(0, 1, BufDur.ir(buf));
 
 	sig = GrainBuf.ar(
 		numChannels: 2,
@@ -338,7 +338,7 @@ SynthDef(\gb1, { |out=0, amp=1, ampLag=0.02, gate=1,
 	);
 
 	// manual stop via gate -> fade out then free
-	ampEnv = EnvGen.kr(Env.asr(0.01, 1, 0.25), gate, doneAction: 2);
+	ampEnv = EnvGen.kr(Env.asr(0.01, 1, 0.25), gate);
 
 	Out.ar(out, sig * amp * ampEnv);
 }).add;
@@ -348,17 +348,50 @@ SynthDef(\gb1, { |out=0, amp=1, ampLag=0.02, gate=1,
 ~g1env = Env([0, 1, 0], [0.5, 0.5], [8, -8]);
 ~g1envbuf = Buffer.sendCollection(s, ~g1env.discretize, 1);
 (
-SynthDef(\gin1, { |out, gate = 1, amp = 1, envbuf |
-    var pan, env;
-    // use mouse x to control panning
-    pan = MouseX.kr(-1, 1);
-    env = EnvGen.kr(
-        Env([0, 1, 0], [1, 1], \sin, 1),
-        gate,
-        levelScale: amp,
-        doneAction: Done.freeSelf);
-    Out.ar(out,
-        GrainIn.ar(2, Impulse.kr(32), 1, PinkNoise.ar * 0.05, pan, envbuf) * env)
+SynthDef(\gin1, { |out, fxMix = 0.5, trigRate = 40, grainDur = 0.08,
+    pan = 0.0, amp = 0.3, envbufnum = 0|
+    var dry, mono, wet, outSig;  // vars at top
+
+    // 'out' is the channel’s bus that playfx fills in
+    dry  = In.ar(out, 2);
+    mono = (dry[0] + dry[1]) * 0.5;  // GrainIn wants mono in
+
+    wet = GrainIn.ar(
+        numChannels: 2,
+        trigger: Impulse.kr(trigRate),
+        dur: grainDur,
+        in: mono,
+        pan: pan,
+        envbufnum: envbufnum
+    ) * amp;
+
+    // wet/dry mix
+    outSig = (dry * (1 - fxMix)) + (wet * fxMix);
+
+    // replace the channel signal on its own bus
+    ReplaceOut.ar(out, outSig);
+}).add;
+);
+(
+SynthDef(\gin1r, { |out, trigRate = 40, grainDur = 0.08,
+    pan = 0.0, amp = 0.3, envbufnum = 0|
+    var dry, mono, wet;  // vars at top
+
+    // This is the signal arriving from sends into the return
+    dry  = In.ar(out, 2);
+    mono = (dry[0] + dry[1]) * 0.5;
+
+    wet = GrainIn.ar(
+        numChannels: 2,
+        trigger: Dust.kr(trigRate),
+        dur: grainDur,
+        in: mono,
+        pan: pan,
+        envbufnum: envbufnum
+    ) * amp;
+
+    // Return is fully wet; no mixing with dry here
+    ReplaceOut.ar(out, wet);
 }).add;
 );
 
