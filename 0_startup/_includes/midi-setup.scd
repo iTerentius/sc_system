@@ -6,17 +6,8 @@
 // - Provide variables for filtering MIDIdefs by src uid
 // - Provide a MIDIOut to IAC for sending patterns to Bitwig
 
-var srcs, dests;
-var lcxlInIdx, lcxlHuiInIdx, lcInIdx, iacInIdx;
-var lcxlInEp, lcxlHuiInEp, lcInEp, iacInEp;
-var iacOutEp;
-var connectIdx, postSources;
-var useHui;
-
-// ---- init
-MIDIClient.init;
-srcs = MIDIClient.sources;
-dests = MIDIClient.destinations;
+//MIDIClient.init;
+//MIDIIn.connectAll;
 
 // ---- helper: print sources with index + uid (useful when things move)
 postSources = {
@@ -87,14 +78,31 @@ if(iacInEp.notNil) {
 // This does not require MIDIIn.connect.
 iacOutEp = dests.detect { |ep| ep.device.contains("IAC Driver") and: { ep.name.contains("Main") } };
 
-if(iacOutEp.notNil) {
-	~mOut = MIDIOut.newByName(iacOutEp.device, iacOutEp.name);
-	~mOut.latency = s.latency;
-	("MIDIOut set to: " ++ iacOutEp.device ++ " / " ++ iacOutEp.name).postln;
-} {
-	"WARNING: IAC MIDI destination not found. ~mOut not set.".warn;
-	~mOut = nil;
+MIDIdef.start(\printStart, { |srcID| ~pp.("start", ~srcInfo.(srcID)); });
+MIDIdef.stop(\printStop,   { |srcID| ~pp.("stop",  ~srcInfo.(srcID)); });
+MIDIdef.continue(\printCont, { |srcID| ~pp.("continue", ~srcInfo.(srcID)); });
+
+// Pick by name first, then fall back to index 0
+//devName = "IAC Driver";   // change to your device name
+//portName = "Main";        // change to your device port
+//~mOut = MIDIOut.newByName(devName, portName);
+if(MIDIClient.initialized.not) { MIDIClient.init; };
+
+devName = "Virtual Raw MIDI 8-0";
+portName = "VirMIDI 8-0";
+
+~mOut = MIDIOut.newByName(devName, portName);
+
+if (~mOut.isNil) {
+    "MIDIOut.newByName failed, falling back to index 0".warn;
+    ~mOut = MIDIOut.new(0);
+    ~mOut.connect(0);
 };
+
+~mOut.latency = s.latency;
+
+// Cleanup --------------------------------------------------------------------
+// MIDIdef.freeAll; MIDIIn.disconnectAll;
 
 // ---- summary
 [
