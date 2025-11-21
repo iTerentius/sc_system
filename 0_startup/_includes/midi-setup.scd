@@ -6,8 +6,8 @@
     -------------------------------------------------------------------- */
 var devName, portName, fallbackIndex;
 
-MIDIClient.init;
-MIDIIn.connectAll;
+//MIDIClient.init;
+//MIDIIn.connectAll;
 
 // Optional: list available MIDI I/O
 "--- MIDI Sources ---".postln;
@@ -103,17 +103,20 @@ MIDIdef.continue(\printCont, { |srcID| ~pp.("continue", ~srcInfo.(srcID)); });
 //devName = "IAC Driver";   // change to your device name
 //portName = "Main";        // change to your device port
 //~mOut = MIDIOut.newByName(devName, portName);
-~mOut = MIDIOut.new(0);
-~mOut.connect(0);
-//if (~mOut.isNil) {
-//    "MIDIOut.newByName failed, falling back to index 0".warn;
-//    fallbackIndex = 0;
-//    ~mOut = MIDIOut.new(fallbackIndex);
-//    ~mOut.connect(fallbackIndex);
-//};
+if(MIDIClient.initialized.not) { MIDIClient.init; };
 
-// Match your SC scheduling latency so tight with audio clock
-~mOut.latency = s.latency;  // common default is 0.2
+devName = "Virtual Raw MIDI 8-0";
+portName = "VirMIDI 8-0";
+
+~mOut = MIDIOut.newByName(devName, portName);
+
+if (~mOut.isNil) {
+    "MIDIOut.newByName failed, falling back to index 0".warn;
+    ~mOut = MIDIOut.new(0);
+    ~mOut.connect(0);
+};
+
+~mOut.latency = s.latency;
 
 // Cleanup --------------------------------------------------------------------
 // MIDIdef.freeAll; MIDIIn.disconnectAll;
