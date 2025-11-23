@@ -52,35 +52,35 @@ MIDIClient.destinations.do { |dst, i|
     }
 };
 
-// Note on/off ----------------------------------------------------------------
-MIDIdef.noteOn(\printNoteOn, { |vel, note, chan, src|
-    var kind;
-    if(vel == 0) { kind = "noteOff*viaOn"; } { kind = "noteOn"; };
-    ~pp.(kind, ~merge.(~srcInfo.(src), (chan: chan, note: note, vel: vel, vel01: vel/127)));
-});
-
-MIDIdef.noteOff(\printNoteOff, { |vel, note, chan, src|
-    ~pp.("noteOff", ~merge.(~srcInfo.(src), (chan: chan, note: note, vel: vel)));
-});
-
-// CC / Pitch Bend / Program / Aftertouch -------------------------------------
-MIDIdef.cc(\printCC, { |val, num, chan, src|
-    ~pp.("cc: " ++ num ++", chan: " ++ chan ++ ", val: " ++ val);
-});
-
-// If your SC uses 'bend' (most builds): 
-MIDIdef.bend(\printBend, { |val, chan, src|
-    ~pp.("pitchBend", ~merge.(~srcInfo.(src), (chan: chan, raw: val, norm: (val - 8192) / 8192.0)));
-});
-
-// Use 'program' (your build doesn’t define 'prog')
-MIDIdef.program(\printProgram, { |prog, chan, src|
-    ~pp.("program", ~merge.(~srcInfo.(src), (chan: chan, program: prog)));
-});
-
-MIDIdef.touch(\printChAT, { |val, chan, src|
-    ~pp.("channelAftertouch", ~merge.(~srcInfo.(src), (chan: chan, val: val, val01: val/127)));
-});
+// // Note on/off ----------------------------------------------------------------
+// MIDIdef.noteOn(\printNoteOn, { |vel, note, chan, src|
+//     var kind;
+//     if(vel == 0) { kind = "noteOff*viaOn"; } { kind = "noteOn"; };
+//     ~pp.(kind, ~merge.(~srcInfo.(src), (chan: chan, note: note, vel: vel, vel01: vel/127)));
+// });
+//
+// MIDIdef.noteOff(\printNoteOff, { |vel, note, chan, src|
+//     ~pp.("noteOff", ~merge.(~srcInfo.(src), (chan: chan, note: note, vel: vel)));
+// });
+//
+// // CC / Pitch Bend / Program / Aftertouch -------------------------------------
+// MIDIdef.cc(\printCC, { |val, num, chan, src|
+//     ~pp.("cc: " ++ num ++", chan: " ++ chan ++ ", val: " ++ val);
+// });
+//
+// // If your SC uses 'bend' (most builds): 
+// MIDIdef.bend(\printBend, { |val, chan, src|
+//     ~pp.("pitchBend", ~merge.(~srcInfo.(src), (chan: chan, raw: val, norm: (val - 8192) / 8192.0)));
+// });
+//
+// // Use 'program' (your build doesn’t define 'prog')
+// MIDIdef.program(\printProgram, { |prog, chan, src|
+//     ~pp.("program", ~merge.(~srcInfo.(src), (chan: chan, program: prog)));
+// });
+//
+// MIDIdef.touch(\printChAT, { |val, chan, src|
+//     ~pp.("channelAftertouch", ~merge.(~srcInfo.(src), (chan: chan, val: val, val01: val/127)));
+// });
 
 // MIDIdef.polyTouch(\printPolyAT, { |val, note, chan, src|
 //     ~pp.("polyAftertouch", ~merge.(~srcInfo.(src), (chan: chan, note: note, val: val, val01: val/127)));
@@ -91,13 +91,13 @@ MIDIdef.touch(\printChAT, { |val, chan, src|
 //     ~pp.("midiClock", ~srcInfo.(srcID));   // 24 PPQN pulses
 // });
 
-MIDIdef.tick(\printTick, { |srcID|
-    ~pp.("tick", ~srcInfo.(srcID));
-});
+// MIDIdef.tick(\printTick, { |srcID|
+//     ~pp.("tick", ~srcInfo.(srcID));
+// });
 
-MIDIdef.start(\printStart, { |srcID| ~pp.("start", ~srcInfo.(srcID)); });
-MIDIdef.stop(\printStop,   { |srcID| ~pp.("stop",  ~srcInfo.(srcID)); });
-MIDIdef.continue(\printCont, { |srcID| ~pp.("continue", ~srcInfo.(srcID)); });
+// MIDIdef.start(\printStart, { |srcID| ~pp.("start", ~srcInfo.(srcID)); });
+// MIDIdef.stop(\printStop,   { |srcID| ~pp.("stop",  ~srcInfo.(srcID)); });
+// MIDIdef.continue(\printCont, { |srcID| ~pp.("continue", ~srcInfo.(srcID)); });
 
 // Pick by name first, then fall back to index 0
 devName = "IAC Driver";   // change to your device name
