@@ -19,38 +19,38 @@ MIDIClient.destinations.do { |dst, i|
     (i.asString ++ ": " ++ dst.device ++ " (" ++ dst.name ++ ")").postln
 };
 
-// Helpers --------------------------------------------------------------------
-~stamp = { Date.getDate.stamp };
-~pp = { |tag, data|
-    // ("[" ++ ~stamp.() ++ "] " ++ tag ++ "  " ++ data.asString).postln
-    ("[ " ++ tag ++ "  " ++ data.asString ++ " ]").postln
-};
-
-// Merge two Events/IdentityDictionaries safely
-~merge = { |a, b|
-    var e = a.copy;
-    e.putAll(b);
-    e
-};
-
-// Resolve source whether it's a UID (Integer) or an endpoint object
-~srcInfo = { |src|
-    var uid, ep;
-
-    if(src.respondsTo(\uid)) {
-        uid = src.uid;
-    }{
-        uid = src.asInteger;
-    };
-
-    ep = MIDIClient.sources.detect { |m| m.uid == uid };
-
-    if(ep.notNil) {
-        (src: (device: ep.device, name: ep.name, uid: uid))
-    }{
-        (src: (uid: uid))
-    }
-};
+// // Helpers --------------------------------------------------------------------
+// ~stamp = { Date.getDate.stamp };
+// ~pp = { |tag, data|
+//     // ("[" ++ ~stamp.() ++ "] " ++ tag ++ "  " ++ data.asString).postln
+//     ("[ " ++ tag ++ "  " ++ data.asString ++ " ]").postln
+// };
+//
+// // Merge two Events/IdentityDictionaries safely
+// ~merge = { |a, b|
+//     var e = a.copy;
+//     e.putAll(b);
+//     e
+// };
+//
+// // Resolve source whether it's a UID (Integer) or an endpoint object
+// ~srcInfo = { |src|
+//     var uid, ep;
+//
+//     if(src.respondsTo(\uid)) {
+//         uid = src.uid;
+//     }{
+//         uid = src.asInteger;
+//     };
+//
+//     ep = MIDIClient.sources.detect { |m| m.uid == uid };
+//
+//     if(ep.notNil) {
+//         (src: (device: ep.device, name: ep.name, uid: uid))
+//     }{
+//         (src: (uid: uid))
+//     }
+// };
 
 // // Note on/off ----------------------------------------------------------------
 // MIDIdef.noteOn(\printNoteOn, { |vel, note, chan, src|
