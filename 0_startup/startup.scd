@@ -45,6 +45,7 @@ s.waitForBoot {
    // ServerMeter(s);
     // "_includes/mixer-channel-gui.scd".loadRelative;
     ~link = LinkClock(1).latency_(Server.default.latency);
+    TempoClock.default = ~link;
     // --- History recordingsDir
     //"_includes/history-simple.scd".loadRelative;
     //"_includes/history-automation.scd".loadRelative;
