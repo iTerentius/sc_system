@@ -54,7 +54,7 @@ s.waitForBoot {
 
     TempoClock.default = ~link;
     // 3. RESET Tempo to a sane default (120 BPM) immediately
-    ~link.tempo = 120/60; 
+    ~link.tempo = 120/60;
 
 //     OSCdef(\bwTempo, { |msg|
 //     var bpm;
