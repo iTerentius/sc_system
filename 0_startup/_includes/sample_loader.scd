@@ -3,9 +3,10 @@
 // version 2025-09-01 auto mono or stereo audition recursive loader no right parens in comments
 
 // state
-if(~samplesTree.isNil) { ~samplesTree = IdentityDictionary.new };
+if(~sTree.isNil) { ~sTree = IdentityDictionary.new };
 if(~auditionOut.isNil) { ~auditionOut = 0 };
 if(~bufMeta.isNil) { ~bufMeta = IdentityDictionary.new };
+if(~fbufs.isNil) { ~fbufs = IdentityDictionary.new };
 
 // helpers
 ~canon = { |x|
@@ -70,12 +71,12 @@ if(~bufMeta.isNil) { ~bufMeta = IdentityDictionary.new };
             if(v.isKindOf(Dictionary) or: { v.isKindOf(IdentityDictionary) }) { rec.(v, indent+2) };
         };
     };
-    rec.(~samplesTree, 0);
+    rec.(~sTree, 0);
 };
 
 ~getSample = { |folderSym, fileSym|
     var sub, buf;
-    sub = ~samplesTree[folderSym];
+    sub = ~sTree[folderSym];
     if(sub.isNil) { buf = nil } { buf = sub[fileSym] };
     buf
 };
@@ -112,8 +113,8 @@ if(~bufMeta.isNil) { ~bufMeta = IdentityDictionary.new };
 };
 
 // recursive loader
-~loadSamplesRecursive = { |dirPath|
-    var root, count, t0, walk, addBuf, canonSym;
+~loadSamps = { |dirPath|
+    var root, count, t0, walk, addBuf, canonSym,  bufnums;
 
     // normalize to a safe symbol  lower and underscores
     canonSym = { |str|
@@ -154,15 +155,15 @@ if(~bufMeta.isNil) { ~bufMeta = IdentityDictionary.new };
         base = base.replace($ , $_).replace($-, $_).replace($., $_);
         fileSym = base.asSymbol;
 
-        if(~samplesTree[folderSym].isNil) {
-            ~samplesTree[folderSym] = IdentityDictionary.new;
+        if(~sTree[folderSym].isNil) {
+            ~sTree[folderSym] = IdentityDictionary.new;
         };
 
         Buffer.read(s, fpath, action: { |b|
             var sub, ch;
-            sub = ~samplesTree[folderSym];
+            sub = ~sTree[folderSym];
             sub[fileSym] = b;
-            ~samplesTree[folderSym] = sub;
+            ~sTree[folderSym] = sub;
 
             ch = if(b.numChannels.isNil) { 2 } { b.numChannels };
             ~bufMeta[b.bufnum] = ch;
@@ -193,6 +194,18 @@ if(~bufMeta.isNil) { ~bufMeta = IdentityDictionary.new };
 
     walk.(root);
 
+    // 2025-12-08 rebuild fbufs so folders map to bufnum arrays
+    if(~fbufs.isNil) {
+        ~fbufs = IdentityDictionary.new;
+    } {
+        ~fbufs.clear;
+    };
+
+    ~sTree.keysValuesDo { |folder, dict|
+        bufnums = dict.values.collect { |buf| buf.bufnum };
+        ~fbufs[folder] = bufnums;
+    };
+
     ("[sample_loader] Loaded " ++ count ++ " files in " ++ (Main.elapsedTime - t0).round(0.001) ++ " s").postln;
 };
 
@@ -203,9 +216,9 @@ if(~bufMeta.isNil) { ~bufMeta = IdentityDictionary.new };
 if(~sampleRoot.isNil) {
     ~sampleRoot = {
         var root;
-        root = ~samplesTree;
+        root = ~sTree;
         if(root.isNil) { root = ~sampleTree };
-        if(root.isNil) { "[sampleRoot] no ~samplesTree or ~sampleTree is defined".postln };
+        if(root.isNil) { "[sampleRoot] no ~sTree or ~sampleTree is defined".postln };
         ^root
     };
 };

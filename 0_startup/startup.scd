@@ -33,7 +33,7 @@ s.waitForBoot {
 
     "_includes/mixer-channel-16s.scd".loadRelative;
     "_includes/mixer-channel-stem-record.scd".loadRelative;
-    "_includes/ndef2mixer-channel.scd".loadRelative;
+    // "_includes/ndef2mixer-channel.scd".loadRelative;
     // "_includes/ndef-mixer.scd".loadRelative; Helpers
     // "_includes/_helpers/peuc.scd".loadRelative;
     //"_includes/ndef-mixer.scd".loadRelative;
@@ -45,6 +45,7 @@ s.waitForBoot {
    // ServerMeter(s);
     // "_includes/mixer-channel-gui.scd".loadRelative;
     ~link = LinkClock(1).latency_(Server.default.latency);
+    TempoClock.default = ~link;
     // --- History recordingsDir
     //"_includes/history-simple.scd".loadRelative;
     //"_includes/history-automation.scd".loadRelative;

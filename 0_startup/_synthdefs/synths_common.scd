@@ -427,6 +427,15 @@ SynthDef(\duck, { |in=0, side=0, out=0, thresh=0.1, ratio=10, attack=0.01, relea
     Out.ar(out, sig * gain * makeup);
 }).add;
 );
+
+(
+SynthDef(\stretchedFragments, { |out, bufnum, start, time = 1, stretch = 1, amp = 1, attack = 0.01, decay = 0.05|
+    var sig = PlayBuf.ar(1, bufnum, rate: stretch.reciprocal, startPos: start), eg;
+    sig = PitchShift.ar(sig, pitchRatio: stretch);
+    eg = EnvGen.kr(Env.linen(attack, time, decay), sig.abs > 0, doneAction: Done.freeSelf);
+    Out.ar(out, (sig * eg) ! 2)
+}).add; // note add! Without this, arguments won't work
+);
 /* slice_fx for ddwMixerChannel .playfx stereo 2025-10-08 */
 
 ~sliceFX_makeCtrlBuses = {
