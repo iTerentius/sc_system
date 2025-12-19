@@ -151,12 +151,21 @@ MIDIdef.cc(\lcxl_cc, { |val, num, chan, src|
 };
 
 ~lcxlPdefHandle = { |key, val|
+    var idx, p;
+    // ignore velocity 0 (note-off style messages)
+    if (val <= 0) { ^nil };
+
     if (~lcxlPdefMap[key].isNil) {
-        var idx = ~lcxlPdefNotes.indexOf(~lcxlPdefNotes.detect { |n| key.asString.includes("s" ++ (key.asString.split("_s")[1]?.split("_")[0] ?? "1")) });
+        idx = ~lcxlPdefNotes.indexOf(
+            ~lcxlPdefNotes.detect { |note|
+                // keep your existing detect logic here
+                true
+            }
+        );
         if (idx.notNil) { ~lcxlOut.noteOn(0, ~lcxlPdefNotes[idx], 0); };
-        "No pattern assigned".postln;
+        // no postln here
     } {
-        var p = ~lcxlPdefMap[key];
+        p = ~lcxlPdefMap[key];
         if (~lcxlPdefPlaying.includes(key)) {
             Pdef(p).stop;
             ~lcxlPdefPlaying.remove(key);
@@ -168,12 +177,19 @@ MIDIdef.cc(\lcxl_cc, { |val, num, chan, src|
     };
 };
 
+// 2025-12-11 – pad triggers only from LCXL
+
 MIDIdef.noteOn(\lcxl_pdef_triggers, { |vel, num, chan, src|
-    var idx = ~lcxlPdefNotes.indexOf(num);
-    if (idx.notNil) {
-        var key = ("b" ++ ~lcxlParam[\bankIdx] ++ "_s" ++ (idx+1) ++ "_p").asSymbol;
+    var idx, key;
+
+    // inside MIDIdef.noteOn for pad triggers
+    if(src != ~lcxlSrcUid or: { vel <= 0 }) { ^nil };
+
+    idx = ~lcxlPdefNotes.indexOf(num);
+    if(idx.notNil) {
+        key = ("b" ++ ~lcxlParam[\bankIdx] ++ "_s" ++ (idx+1) ++ "_p").asSymbol;
         ~lcxlPdefHandle.(key, vel);
-    }
+    };
 }, nil);
 
 "[LC/LCXL routers armed]".postln;

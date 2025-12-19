@@ -10,7 +10,7 @@ var chan;  // declare vars at top
 
 // master
 ~m1.tryPerform(\free);
-~m1 = MixerChannel.new(\m1, s, 2, 2, outbus: 0, postgain: 4.0);
+~m1 = MixerChannel.new(\m1, s, 2, 2, outbus: 0);
 ~lcxlParam[\b8_s8_f] = { |x| ~m1.level_(x.linlin(0, 127, 0.0, 1.0)) };
 // ~apcBindParam.(\master_f, { |x| ~m1.level_(x) });
 

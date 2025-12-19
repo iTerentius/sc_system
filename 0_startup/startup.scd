@@ -32,7 +32,7 @@ s.waitForBoot {
     "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative; // Launch-controls for just params.
 
     "_includes/mixer-channel-16s.scd".loadRelative;
-    "_includes/mixer-channel-stem-record.scd".loadRelative;
+    // "_includes/mixer-channel-stem-record.scd".loadRelative;
     // "_includes/ndef2mixer-channel.scd".loadRelative;
     // "_includes/ndef-mixer.scd".loadRelative; Helpers
     // "_includes/_helpers/peuc.scd".loadRelative;
@@ -44,8 +44,21 @@ s.waitForBoot {
    // s.plotTree;
    // ServerMeter(s);
     // "_includes/mixer-channel-gui.scd".loadRelative;
-    ~link = LinkClock(1).latency_(Server.default.latency);
+    ~link = LinkClock.new.latency_(Server.default.latency - 0.567);
     TempoClock.default = ~link;
+    // main musical clock for Pdefs you want to record
+    ~bw = TempoClock.new(1.0).permanent_(true);
+    ~setBpm = { |bpm|
+        ~bw.tempo = bpm * 4 / 60;
+        ("SC BPM -> " ++ bpm).postln;
+    };
+//     OSCdef(\bwTempo, { |msg|
+//     var bpm;
+//     bpm = msg[1].asFloat;
+//     ~bw.tempo = bpm / 60;
+// }, '/bitwig/tempo');
+//
+    Pdef.defaultQuant = 4;
     // --- History recordingsDir
     //"_includes/history-simple.scd".loadRelative;
     //"_includes/history-automation.scd".loadRelative;
@@ -65,3 +78,6 @@ s.waitForBoot {
     // ~apcArmGrid.();
 };
 )
+// ~link.tempo;
+// ~link.beats;
+// ~link.numPeers;
