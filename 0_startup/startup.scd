@@ -29,7 +29,10 @@ s.waitForBoot {
 
     // --- Launch Controls ---
     "_includes/midi-setup.scd".loadRelative;
-    "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative; // Launch-controls for just params.
+    // "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative; // Launch-controls for just params.
+
+    // --- Launch Pad Mini ---
+    "_includes/_midi-ctrl/launch-pad-mini/lp-param-router.scd".loadRelative;
 
     "_includes/mixer-channel-16s.scd".loadRelative;
     // "_includes/mixer-channel-stem-record.scd".loadRelative;
@@ -44,14 +47,18 @@ s.waitForBoot {
    // s.plotTree;
    // ServerMeter(s);
     // "_includes/mixer-channel-gui.scd".loadRelative;
-    ~link = LinkClock.new.latency_(Server.default.latency - 0.567);
+    // 1. CLEAR existing clocks to kill Zombies
+    if (~link.notNil) { ~link.clear; ~link = nil; };
+    LinkClock.all.do({ |c| c.clear }); // Scorched earth policy: clear ALL LinkClocks
+
+    // 2. CREATE the new clock
+    // Note: We use a specific variable so we can track it later
+    ~link = LinkClock(1).latency_(Server.default.latency -0.567);
+
     TempoClock.default = ~link;
-    // main musical clock for Pdefs you want to record
-    ~bw = TempoClock.new(1.0).permanent_(true);
-    ~setBpm = { |bpm|
-        ~bw.tempo = bpm * 4 / 60;
-        ("SC BPM -> " ++ bpm).postln;
-    };
+    // 3. RESET Tempo to a sane default (120 BPM) immediately
+    ~link.tempo = 120/60; 
+
 //     OSCdef(\bwTempo, { |msg|
 //     var bpm;
 //     bpm = msg[1].asFloat;
@@ -72,6 +79,7 @@ s.waitForBoot {
    // Ableton LinkClock
    //"_includes/ableton-link-gui.scd".loadRelative;
 
+    if(~lpMini.notNil) { ~lpMini[\clearGrid].(); };
     "Setup done!".postln;
 
     // "_includes/_midi-ctrl/apc40/apc_device_group_bind_fix.scd".loadRelative;
