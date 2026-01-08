@@ -187,7 +187,8 @@ if (~lpMini[\src].isNil) {
 ~lpBind = { |ref, key, color=nil|
     var note;
     if(ref.isArray) {
-        note = (ref[0] * 10) + ref[1];
+        // note = (ref[0] * 10) + ref[1];
+        note = ((9 - ref[0]) * 10) + ref[1];
     } {
         note = ref;
     };
