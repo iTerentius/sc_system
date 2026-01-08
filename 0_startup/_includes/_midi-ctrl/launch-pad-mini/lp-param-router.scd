@@ -1,8 +1,8 @@
 (
 // -----------------------------------------------------------------------------
-// Launchpad Mini [MK3] Universal Launcher (v7)
-// Update: Type-based Default Colors (Pdef=9, Ndef=95)
-// Behavior: Stopped = Static Color | Playing = Pulsing Color
+// Launchpad Mini [MK3] Universal Launcher (v11)
+// Update: Added Function/String Support (One-Shot Triggers)
+//         Functions default to Yellow (13). Flash Green on trigger.
 // -----------------------------------------------------------------------------
 
 var pickSrc, pickDest;
@@ -45,8 +45,10 @@ if (~lpMini[\src].isNil) {
 // --- COLOR CONFIGURATION ---
 ~lpMini[\colors] = (
     empty:       0,   // Off
-    pdefDefault: 9,   // Orange/Amber (Default for Pdef/Tdef)
-    ndefDefault: 95   // Magenta (Default for Ndef)
+    pdefDefault: 9,   // Orange/Amber (Pdef/Tdef)
+    ndefDefault: 95,  // Magenta (Ndef)
+    funcDefault: 13,  // Yellow (Function/String)
+    trigger:     21   // Green (Flash color on execution)
 );
 
 // 4. Mode Switching & Clearing
@@ -68,32 +70,38 @@ if (~lpMini[\src].isNil) {
     };
 };
 
-// 5. Object Resolver
+// 5. Object Resolver (Updated for Functions)
 ~lpMini[\getObj] = { |key|
     var obj;
-    if(Pdef.all[key].notNil) { 
-        obj = Pdef(key) 
+    
+    // 1. Direct Function or String binding
+    if(key.isKindOf(Function) or: { key.isString }) {
+        obj = key;
     } {
-        if(Tdef.all[key].notNil) { 
-            obj = Tdef(key) 
+        // 2. Symbol lookup
+        if(Pdef.all[key].notNil) { 
+            obj = Pdef(key) 
         } {
-            var proxySpace = Ndef.dictFor(Server.default);
-            if(proxySpace.notNil and: { proxySpace.envir.at(key).notNil }) {
-                obj = Ndef(key)
+            if(Tdef.all[key].notNil) { 
+                obj = Tdef(key) 
+            } {
+                var proxySpace = Ndef.dictFor(Server.default);
+                if(proxySpace.notNil and: { proxySpace.envir.at(key).notNil }) {
+                    obj = Ndef(key)
+                }
             }
         }
     };
     obj
 };
 
-// 6. LED Painter (Updated for Type-Based Defaults)
+// 6. LED Painter
 ~lpMini[\paint] = { |note, bindData|
     var obj, isPlaying, color, channel, key, assignedColor;
     
-    // Unpack binding
     if (bindData.isKindOf(Event) or: { bindData.isKindOf(IdentityDictionary) }) {
         key = bindData[\key];
-        assignedColor = bindData[\color]; // Might be nil
+        assignedColor = bindData[\color]; 
     } {
         key = bindData; 
         assignedColor = nil;
@@ -109,17 +117,17 @@ if (~lpMini[\src].isNil) {
             isPlaying = false;
             
             // --- DETERMINE COLOR ---
-            // 1. Use manual color if provided
             if(assignedColor.notNil) {
                 color = assignedColor;
             } {
-                // 2. Otherwise pick based on Object Type
                 if(obj.isKindOf(NodeProxy)) {
-                    // Ndef
                     color = ~lpMini[\colors][\ndefDefault];
                 } {
-                    // Pdef / Tdef
-                    color = ~lpMini[\colors][\pdefDefault];
+                    if(obj.isKindOf(Function) or: { obj.isString }) {
+                        color = ~lpMini[\colors][\funcDefault];
+                    } {
+                        color = ~lpMini[\colors][\pdefDefault];
+                    };
                 };
             };
 
@@ -130,12 +138,13 @@ if (~lpMini[\src].isNil) {
             if(obj.isKindOf(NodeProxy)) { 
                 isPlaying = obj.isMonitoring; 
             };
+            // Functions are never "playing" in a persistent sense
 
             // --- SET CHANNEL (Animation) ---
             if(isPlaying) {
-                channel = 2; // Pulsing (Flash)
+                channel = 2; // Pulsing
             } {
-                channel = 0; // Static (Solid)
+                channel = 0; // Static
             };
         };
 
@@ -149,26 +158,117 @@ if (~lpMini[\src].isNil) {
     };
 };
 
-// 7. Action Handler
+// 7. Toggle Handler (Single Pad)
 ~lpMini[\toggle] = { |note, bindData|
     var key = bindData[\key];
     var obj = ~lpMini[\getObj].(key);
+    var clock = bindData[\clock] ?? { ~link ?? { TempoClock.default } };
+    var quant = bindData[\quant] ?? { 4 };
     
     if(obj.notNil) {
-        var isRunning = false;
-        if(obj.isKindOf(NodeProxy)) { isRunning = obj.isMonitoring } { isRunning = obj.isPlaying };
-
-        if(isRunning) {
-            obj.stop;
-            "[%] Stopping: %".format(note, key).postln;
+        
+        // --- FUNCTION / STRING EXECUTION ---
+        if(obj.isKindOf(Function)) {
+            obj.value;
+            "[%] Executed Function".format(note).postln;
+            // Visual Flash
+            ~lpMini[\out].noteOn(0, note, ~lpMini[\colors][\trigger]); 
+            // Force cache reset so it repaints to Yellow on next cycle
+            ~lpMini[\ledCache][note] = nil; 
         } {
-            obj.play;
-            "[%] Playing: %".format(note, key).postln;
+            if(obj.isString) {
+                obj.interpret;
+                "[%] Evaluated String".format(note).postln;
+                ~lpMini[\out].noteOn(0, note, ~lpMini[\colors][\trigger]);
+                ~lpMini[\ledCache][note] = nil;
+            } {
+                
+                // --- STANDARD PATTERN LOGIC ---
+                var isRunning = false;
+                if(obj.isKindOf(NodeProxy)) { isRunning = obj.isMonitoring } { isRunning = obj.isPlaying };
+
+                if(isRunning) {
+                    if(obj.respondsTo(\stopQ)) {
+                        obj.stopQ(quant);
+                        "[%] Stopping (Quant %): %".format(note, quant, key).postln;
+                    } {
+                        obj.stop;
+                        "[%] Stopping (Immediate): %".format(note, key).postln;
+                    };
+                } {
+                    if(obj.isKindOf(NodeProxy)) {
+                        obj.quant = quant; 
+                        obj.play;
+                        "[%] Playing (Monitor): %".format(note, key).postln;
+                    } {
+                        obj.play(clock, quant: quant);
+                        "[%] Playing (Clock: %, Quant: %): %".format(note, clock.class, quant, key).postln;
+                    };
+                };
+            };
         };
     } {
         "[%] Empty Key: %".format(note, key).postln;
         ~lpMini[\ledCache][note] = nil; 
         ~lpMini[\paint].(note, bindData);
+    };
+};
+
+// --- Group Launcher (Row/Column) ---
+~lpMini[\launchList] = { |noteList|
+    var bindList = List.new;
+    var anyPlaying = false;
+    
+    noteList.do { |n|
+        var b = ~lpMini[\bindings][n];
+        if(b.notNil) {
+            var k = b[\key];
+            var obj = ~lpMini[\getObj].(k);
+            if(obj.notNil) {
+                var running = false;
+                // Functions don't count as "Playing" for the Stop All logic
+                if(obj.isKindOf(NodeProxy)) { running = obj.isMonitoring }; 
+                if(obj.isKindOf(Pdef) or: {obj.isKindOf(Tdef)}) { running = obj.isPlaying };
+                
+                if(running) { anyPlaying = true };
+                bindList.add( (note: n, bind: b, obj: obj, running: running) );
+            };
+        };
+    };
+
+    if(bindList.size > 0) {
+        if(anyPlaying) {
+            "--- Group Stop ---".postln;
+            bindList.do { |item|
+                if(item[\running]) {
+                    var q = item[\bind][\quant] ?? { 4 };
+                    if(item[\obj].respondsTo(\stopQ)) { item[\obj].stopQ(q) } { item[\obj].stop };
+                };
+            };
+        } {
+            "--- Group Play / Trigger ---".postln;
+            bindList.do { |item|
+                var obj = item[\obj];
+                
+                // Trigger Functions
+                if(obj.isKindOf(Function)) { obj.value };
+                if(obj.isString) { obj.interpret };
+                
+                // Play Patterns (if not already running)
+                if(item[\running].not) {
+                    var clk = item[\bind][\clock] ?? { ~link ?? { TempoClock.default } };
+                    var q = item[\bind][\quant] ?? { 4 };
+                    
+                    if(obj.isKindOf(NodeProxy)) {
+                        obj.quant = q; obj.play;
+                    } {
+                        if(obj.isKindOf(Pdef) or: {obj.isKindOf(Tdef)}) {
+                            obj.play(clk, quant: q);
+                        };
+                    };
+                };
+            };
+        };
     };
 };
 
@@ -183,35 +283,68 @@ if (~lpMini[\src].isNil) {
 }.play(AppClock);
 
 // 9. Binding API
-// Usage: ~lpBind.([row, col], \key, optionalColorID)
-~lpBind = { |ref, key, color=nil|
-    var note;
+// Usage: ~lpBind.([row, col], \key OR {func} OR "code")
+~lpBind = { |ref, key, color=nil, clock=nil, quant=nil|
+    var note, storedKey;
     if(ref.isArray) {
-        // note = (ref[0] * 10) + ref[1];
         note = ((9 - ref[0]) * 10) + ref[1];
     } {
         note = ref;
     };
     
-    ~lpMini[\bindings][note] = (key: key.asSymbol, color: color);
+    // Store Function/String directly, convert Symbol if needed
+    if(key.isKindOf(Function) or: { key.isString }) {
+        storedKey = key;
+    } {
+        storedKey = key.asSymbol;
+    };
+    
+    ~lpMini[\bindings][note] = (
+        key: storedKey, 
+        color: color,
+        clock: clock,
+        quant: quant
+    );
     
     ~lpMini[\ledCache][note] = nil; 
     ~lpMini[\paint].(note, ~lpMini[\bindings][note]);
     
-    "LP Bound Pad % -> %".format(note, key).postln;
+    "LP Bound Pad %".format(note).postln;
 };
 
-// 10. MIDI Listener
-MIDIdef.free(\lpMini_trigger);
-MIDIdef.noteOn(\lpMini_trigger, { |vel, note, chan, src|
-    var bindData;
+// 10. MIDI Listeners
+MIDIdef.free(\lpMini_note);
+MIDIdef.free(\lpMini_cc);
+
+MIDIdef.noteOn(\lpMini_note, { |vel, note, chan, src|
     if(vel > 0) {
-        bindData = ~lpMini[\bindings][note];
+        var bindData = ~lpMini[\bindings][note];
         if(bindData.notNil) {
             ~lpMini[\toggle].(note, bindData);
+        } {
+            if( (note % 10) == 9 ) {
+                var row = 9 - (note / 10).floor; 
+                if(row >= 1 and: { row <= 8 }) {
+                    var rowBase = (9 - row) * 10; 
+                    var noteList = (1..8).collect { |c| rowBase + c };
+                    "Scene Launch Row %".format(row).postln;
+                    ~lpMini[\launchList].(noteList);
+                };
+            };
         };
     };
 }, nil, 0, ~lpMini[\uid]);
+
+MIDIdef.cc(\lpMini_cc, { |val, cc, chan, src|
+    if(val > 0) {
+        if(cc >= 91 and: { cc <= 98 }) {
+            var col = cc - 90; 
+            var noteList = (1..8).collect { |r| ((9-r)*10) + col };
+            "Column Launch Col %".format(col).postln;
+            ~lpMini[\launchList].(noteList);
+        };
+    };
+}, nil, 0, ~lpMini[\uid]); 
 
 // 11. Recovery
 CmdPeriod.add({
@@ -221,13 +354,12 @@ CmdPeriod.add({
              ~lpMini[\out].latency = 0;
         };
         ~lpMini[\setProgrammerMode].();
-        
         if(~lpMini[\watcher].isPlaying.not) { ~lpMini[\watcher].reset.play(AppClock) };
         "LP Mini Refreshed".postln;
     }.defer(0.5);
 });
 
-"--- Launchpad Mini MK3 Universal Launcher Loaded (v7) ---".postln;
+"--- Launchpad Mini MK3 Universal Launcher Loaded (v11) ---".postln;
 )
 // -----------------------------------------------------------------------------
 // EXAMPLES
