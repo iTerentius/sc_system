@@ -345,4 +345,3 @@ if(~chopSample.isNil) {
     };
 };
 )
-
