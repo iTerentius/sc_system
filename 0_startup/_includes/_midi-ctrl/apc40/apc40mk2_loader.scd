@@ -1,5 +1,6 @@
-"apc_boot_all.scd".loadRelative;  // NEW grid inclu
-"apc_device_knobs.scd".loadRelative;  // NEW grid inclu
+"apc_boot_all.scd".loadRelative;       // Core grid + faders + banks
+"apc_device_knobs.scd".loadRelative;  // Device knobs CC
+"apc_pad_extensions.scd".loadRelative; // Extended pad support (Ndef, Function, Tdef)
 
 // // map a couple pads to patterns
 // Pdef(\kick2, Pbind(\instrument, \default, \degree, 0, \dur, 0.25, \amp, 0.15, \out, ~t1.inbus.index));
