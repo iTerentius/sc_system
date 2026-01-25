@@ -310,6 +310,132 @@ SynthDef(\slice_fx, { |inbus=0, out=0, bufSecs=2, nSlices=8, sliceIndex=0, rate=
     Out.ar(out, XFade2.ar(dry, wet, (mix * 2) - 1));
 }).add;
 );
+
+(
+SynthDef(\gb1, { |out=0, amp=1, ampLag=0.02, gate=1,
+	freq=220, trig_rate=8, grain_dur=0.05, buf, env, rate=1, pan_rate=10, trig_enable=1|
+	var trig, pos, sig, ampEnv;
+
+	// optional: smooth mixer fades on \amp
+	amp = Lag.kr(amp, ampLag);
+
+	// start/stop grain triggers without freeing the node
+	trig = Impulse.kr(trig_rate) * trig_enable;  // 0 = no new grains, 1 = normal
+
+	// scan the buffer once per node lifetime; remove doneAction here for manual stop
+	pos = Line.kr(0, 1, BufDur.ir(buf));
+
+	sig = GrainBuf.ar(
+		numChannels: 2,
+		trigger: trig,
+		dur: grain_dur,
+		sndbuf: buf,
+		rate: rate.midiratio,
+		pos: pos,
+		interp: 2,
+		pan: LFNoise1.kr(pan_rate),
+		envbufnum: env
+	);
+
+	// manual stop via gate -> fade out then free
+	ampEnv = EnvGen.kr(Env.asr(0.01, 1, 0.25), gate);
+
+	Out.ar(out, sig * amp * ampEnv);
+}).add;
+);
+
+// a custom envelope
+~g1env = Env([0, 1, 0], [0.5, 0.5], [8, -8]);
+~g1envbuf = Buffer.sendCollection(s, ~g1env.discretize, 1);
+(
+SynthDef(\gin1, { |out, fxMix = 0.5, trigRate = 40, grainDur = 0.08,
+    pan = 0.0, amp = 0.3, envbufnum = 0|
+    var dry, mono, wet, outSig;  // vars at top
+
+    // 'out' is the channel's bus that playfx fills in
+    dry  = In.ar(out, 2);
+    mono = (dry[0] + dry[1]) * 0.5;  // GrainIn wants mono in
+
+    wet = GrainIn.ar(
+        numChannels: 2,
+        trigger: Impulse.kr(trigRate),
+        dur: grainDur,
+        in: mono,
+        pan: pan,
+        envbufnum: envbufnum
+    ) * amp;
+
+    // wet/dry mix
+    outSig = (dry * (1 - fxMix)) + (wet * fxMix);
+
+    // replace the channel signal on its own bus
+    ReplaceOut.ar(out, outSig);
+}).add;
+);
+(
+SynthDef(\gin1r, { |out, trigRate = 40, grainDur = 0.08,
+    pan = 0.0, amp = 0.3, envbufnum = 0|
+    var dry, mono, wet;  // vars at top
+
+    // This is the signal arriving from sends into the return
+    dry  = In.ar(out, 2);
+    mono = (dry[0] + dry[1]) * 0.5;
+
+    wet = GrainIn.ar(
+        numChannels: 2,
+        trigger: Dust.kr(trigRate),
+        dur: grainDur,
+        in: mono,
+        pan: pan,
+        envbufnum: envbufnum
+    ) * amp;
+
+    // Return is fully wet; no mixing with dry here
+    ReplaceOut.ar(out, wet);
+}).add;
+);
+
+(
+// 2025-11-12 sidechain ducking
+
+SynthDef(\duck, { |in=0, side=0, out=0, thresh=0.1, ratio=10, attack=0.01, release=0.1, makeup=1|
+    var sig, sideSig, sideMono, env, cond, gain;
+
+    sig      = In.ar(in, 2);    // stereo signal to be ducked
+    sideSig  = In.ar(side, 2);  // stereo sidechain signal
+    sideMono = Mix(sideSig);    // collapse to mono for envelope tracking
+
+    // envelope follower with smoothing
+    env = LagUD.kr(
+        Amplitude.kr(sideMono, 0.01, 0.1),
+        attack,
+        release
+    );
+
+    // cond is a control rate signal, 0 when below threshold, >0 when above
+    cond = env > thresh;
+
+    // Select.kr chooses index 0 or 1 based on cond (0 or 1)
+    gain = Select.kr(
+        cond,  // when 0 -> first element, when 1 -> second
+        [
+            1,                                      // below threshold
+            (env / thresh).reciprocal.pow(ratio)   // above threshold
+        ]
+    );
+
+    Out.ar(out, sig * gain * makeup);
+}).add;
+);
+
+(
+SynthDef(\stretchedFragments, { |out, buf, start, time = 1, stretch = 1, amp = 1, attack = 0.01, decay = 0.05|
+    var sig = PlayBuf.ar(1, buf, rate: stretch.reciprocal, startPos: start), eg;
+    sig = PitchShift.ar(sig, pitchRatio: stretch);
+    eg = EnvGen.kr(Env.linen(attack, time, decay), sig.abs > 0, doneAction: Done.freeSelf);
+    Out.ar(out, (sig * eg) ! 2)
+}).add; // note add! Without this, arguments won't work
+);
 /* slice_fx for ddwMixerChannel .playfx stereo 2025-10-08 */
 
 ~sliceFX_makeCtrlBuses = {

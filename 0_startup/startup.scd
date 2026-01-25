@@ -1,66 +1,92 @@
 (
-// Normal Usage
-s.options.numBuffers = 1024 * 16;
-s.options.memSize = 8192 * 256;
-s.options.numOutputBusChannels = 36;
-s.options.numInputBusChannels = 0;
+// Cross-platform startup.scd
+// Detects platform and configures audio/MIDI accordingly
 
-// Scarlett 18i20 Usage
-// s.options.numOutputBusChannels = 20;    // Scarlett 18i20 → 10 stereo outs
-// s.options.numInputBusChannels  = 20;    // up to 10 stereo ins
-// s.options.sampleRate = 48000;
-// s.options.memSize = 8192;
-// s.options.numBuffers = 1024;
-// s.options.maxNodes = 1024;
-// s.options.blockSize = 64;
-// s.options.hardwareBufferSize = 128;     // match JACK frames/period
-// s.options.device = "JACK";              // route through JACK
+var platform;
+
+// ---- detect platform
+platform = Platform.case(
+    \osx,   { \macos },
+    \linux, { \linux },
+    \windows, { \windows },
+    { \unknown }
+);
+("Platform detected: " ++ platform).postln;
+
+// ---- platform-specific audio configuration
+case
+{ platform == \macos } {
+    // Scarlett 2i2 on macOS (CoreAudio)
+    s.options.numOutputBusChannels = 2;
+    s.options.numInputBusChannels  = 2;
+    s.options.sampleRate = 48000;
+    s.options.memSize = 8192;
+    s.options.numBuffers = 1024;
+    s.options.maxNodes = 1024;
+    s.options.blockSize = 64;
+    // CoreAudio uses device name directly, or nil for default
+    // s.options.device = "Scarlett 2i2 USB";
+    "Audio config: macOS / Scarlett 2i2".postln;
+}
+{ platform == \linux } {
+    // Scarlett 18i20 on Linux (JACK)
+    s.options.numOutputBusChannels = 20;    // Scarlett 18i20 -> 10 stereo outs
+    s.options.numInputBusChannels  = 20;    // up to 10 stereo ins
+    s.options.sampleRate = 48000;
+    s.options.memSize = 8192;
+    s.options.numBuffers = 1024;
+    s.options.maxNodes = 1024;
+    s.options.blockSize = 64;
+    s.options.hardwareBufferSize = 128;     // match JACK frames/period
+    s.options.device = "JACK";              // route through JACK
+    "Audio config: Linux / Scarlett 18i20 via JACK".postln;
+}
+{ // fallback
+    s.options.numOutputBusChannels = 2;
+    s.options.numInputBusChannels  = 2;
+    "Audio config: using defaults".postln;
+};
+
 if (s.serverRunning.not) { s.boot };
 
 s.waitForBoot {
-    // --- Core MIDI + quantized recording + common synths + sample loader
-    // "_includes/quant-recording.scd".loadRelative;
+    // --- Core synths + sample loader (always load)
     "_synthdefs/synths_common.scd".loadRelative;
     "_includes/sample_loader.scd".loadRelative;
-    // "_includes/_midi-ctrl/midi-device-loader.scd".loadRelative; // Launch-controls for just params.
 
-    // --- APC40mk2 ----
-     // "_includes/_midi-ctrl/apc40/apc40mk2_loader.scd".loadRelative; // Launch-controls for just params.
-
-    // --- Launch Controls ---
+    // --- MIDI setup (cross-platform)
     "_includes/midi-setup.scd".loadRelative;
-    "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative; // Launch-controls for just params.
 
+    // --- MIDI Controllers (load conditionally based on detection)
+    // APC40 mkII - will self-detect and skip gracefully if not present
+    "_includes/_midi-ctrl/apc40/apc40mk2_loader.scd".loadRelative;
+
+    // Launch Control XL - uncomment if you use it
+    // "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative;
+
+    // Launch Pad Mini - uncomment if you use it
+    "_includes/_midi-ctrl/launch-pad-mini/lp-param-router.scd".loadRelative;
+
+    // --- Mixer channels (with conditional controller bindings)
     "_includes/mixer-channel-16s.scd".loadRelative;
-    "_includes/mixer-channel-stem-record.scd".loadRelative;
-    "_includes/ndef2mixer-channel.scd".loadRelative;
-    // "_includes/ndef-mixer.scd".loadRelative; Helpers
-    // "_includes/_helpers/peuc.scd".loadRelative;
-    //"_includes/ndef-mixer.scd".loadRelative;
-    //"_includes/ndef-mixer-copilot.scd".loadRelative;
 
-    //MIDI Controllers
-    // "_includes/_midi-ctrl/launch-control/launch-controls.mixer-channel.scd".loadRelative; // Launch-controls with auto binding for mixer + params for leftovers.
-   // s.plotTree;
-   // ServerMeter(s);
-    // "_includes/mixer-channel-gui.scd".loadRelative;
-    ~link = LinkClock(1).latency_(Server.default.latency);
-    // --- History recordingsDir
-    //"_includes/history-simple.scd".loadRelative;
-    //"_includes/history-automation.scd".loadRelative;
+    // --- LinkClock setup
+    // 1. CLEAR existing clocks to kill Zombies
+    if (~link.notNil) { ~link.clear; ~link = nil; };
+    LinkClock.all.do({ |c| c.clear }); // Scorched earth policy: clear ALL LinkClocks
 
-   // s.plotTree;
-   // ServerMeter.new;
-   // FreqScope.new;
-   // Stethoscope.new;
-   // HelpBrowser.new;
- 
-   // Ableton LinkClock
-   //"_includes/ableton-link-gui.scd".loadRelative;
+    // 2. CREATE the new clock
+    ~link = LinkClock(1).latency_(Server.default.latency - 0.567);
 
-    "Setup done!".postln;
+    TempoClock.default = ~link;
+    // 3. RESET Tempo to a sane default (120 BPM) immediately
+    ~link.tempo = 120/60;
 
-    // "_includes/_midi-ctrl/apc40/apc_device_group_bind_fix.scd".loadRelative;
-    // ~apcArmGrid.();
+    Pdef.defaultQuant = 4;
+
+    // --- Cleanup any launchpad state if present
+    if(~lpMini.notNil) { ~lpMini[\clearGrid].(); };
+
+    ("Setup done! (" ++ platform ++ ")").postln;
 };
 )

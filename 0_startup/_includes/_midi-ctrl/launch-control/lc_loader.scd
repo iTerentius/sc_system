@@ -6,6 +6,7 @@
 // "rearm_all_locked_uid.v2.scd".loadRelative;
 // "lcxl_force_rearm.v1.scd".loadRelative;
 "lc-lcxl-router-revamp.scd".loadRelative;
+// "lcxl-banked-param-router.scd".loadRelative;
 
 
 // // map a couple pads to patterns
@@ -16,4 +17,12 @@
 // ~lcxlParam[\b3_s5_r3] = { |val| ("LCXL b3s5r3: %\n".format(val)).post };
 // ~lcxlParam[\b1_s1_f] = { |val| ("LCXL b1_s1_f: %\n".format(val)).post };
 // ~lcxlBindPdef.(\b1_s3_p, \kick2);  // maps bank 0, button 3 to Pdef(\drums)
+// (
+// MIDIFunc.cc({ |val, num, chan, src|
+//     ["CHECKING", "CC Num (num):", num, "Midi Channel (chan):", chan].postln;
+// });
+// MIDIFunc.noteOn({ |val, num, chan, src|
+//     ["CHECKING", "noteOn Num (num):", num, "Midi Channel (chan):", chan].postln;
+// });
+// )
 

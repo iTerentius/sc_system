@@ -44,9 +44,81 @@ ensureID.(\apcSceneMap);
 ensureID.(\apcStopColChanMap);
 ensureID.(\apcParamBindings);
 
-/* colors bag */
+/* colors bag - APC40 MK2 supports 128 colors (0-127) via velocity */
 if(~apcColors.isNil or: { ~apcColors.isKindOf(IdentityDictionary).not }) {
-    ~apcColors = IdentityDictionary[\off -> 0, \amber -> 126, \green -> 21];
+    ~apcColors = IdentityDictionary[
+        // Basic states
+        \off -> 0,
+        \on -> 1,
+
+        // Grayscale
+        \dimWhite -> 1,
+        \white -> 3,
+
+        // Reds
+        \dimRed -> 5,
+        \red -> 6,
+        \brightRed -> 7,
+
+        // Oranges
+        \dimOrange -> 9,
+        \orange -> 10,
+        \brightOrange -> 11,
+
+        // Yellows
+        \dimYellow -> 13,
+        \yellow -> 14,
+        \brightYellow -> 15,
+
+        // Chartreuse (yellow-green)
+        \dimChartreuse -> 17,
+        \chartreuse -> 18,
+        \brightChartreuse -> 19,
+
+        // Greens
+        \dimGreen -> 21,
+        \green -> 22,
+        \brightGreen -> 23,
+
+        // Cyan/Teal
+        \dimCyan -> 25,
+        \cyan -> 26,
+        \brightCyan -> 27,
+
+        // Light Blue
+        \dimSky -> 29,
+        \sky -> 30,
+        \brightSky -> 31,
+
+        // Blue
+        \dimBlue -> 33,
+        \blue -> 34,
+        \brightBlue -> 35,
+
+        // Purple/Violet
+        \dimPurple -> 37,
+        \purple -> 38,
+        \brightPurple -> 39,
+
+        // Magenta
+        \dimMagenta -> 41,
+        \magenta -> 42,
+        \brightMagenta -> 43,
+
+        // Pink
+        \dimPink -> 45,
+        \pink -> 46,
+        \brightPink -> 47,
+
+        // Hot colors (for playing states)
+        \hotRed -> 72,
+        \hotOrange -> 84,
+        \hotYellow -> 96,
+        \hotGreen -> 87,
+
+        // Legacy compatibility
+        \amber -> 9  // was 126, now using orange for better visibility
+    ];
 };
 
 /* config bag */
@@ -85,9 +157,28 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
 /* ---------- MIDI Out + Generic Mode ---------- */
 ~apcForceAPCOut = {
-    var out, dev, nam;
+    var out, dev, nam, apcSrc, apcInport;
     if(MIDIClient.initialized.not) { MIDIClient.init; };
-    MIDIIn.connectAll;
+
+    if(~apcMidiInDone.isNil) { ~apcMidiInDone = false; };
+    if(~apcMidiInDone.not) {
+        apcSrc = MIDIClient.sources.detect { |ep|
+            var d, n;
+            d = ep.device.asString;
+            n = ep.name.asString;
+            d.contains("APC40") or: { n.contains("APC40") }
+        };
+
+        if(apcSrc.notNil) {
+            apcInport = 0;
+            { MIDIIn.connect(apcInport, apcSrc) }.try;
+            ["[APC] MIDIIn connected:", apcSrc.device, apcSrc.name].postln;
+            ~apcMidiInDone = true;
+        } {
+            "[APC] source not found for MIDIIn".warn;
+        };
+    };
+
     out = nil;
     MIDIClient.destinations.do { |ep|
         dev = ep.device !? { ep.device.asString } ?? "";
@@ -134,10 +225,15 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 ~apcIntroGenericMode = {
     var out, msg;
     out = ~apcOut ?? { ~apcForceAPCOut.() };
-    if(out.isNil) { "[APC] no MIDIOut for SysEx".warn; ^false };
-    msg = Int8Array[240, 71, 127, 41, 96, 0, 4, 64, 1, 1, 0, 247];
-    out.sysex(msg);
-    "[APC] set Generic Mode".postln; true
+    if(out.isNil) {
+        "[APC] no MIDIOut for SysEx".warn;
+        false
+    } {
+        msg = Int8Array[240, 71, 127, 41, 96, 0, 4, 64, 1, 1, 0, 247];
+        out.sysex(msg);
+        "[APC] set Generic Mode".postln;
+        true
+    }
 };
 
 /* ---------- pads and scenes helpers ---------- */
@@ -189,10 +285,12 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
 ~apcSceneLEDByState = { |sceneNote|
     var row, colors, want;
-    row = ~apcSceneMap[sceneNote]; if(row.isNil) { ^nil };
-    colors = ~apcColors;
-    want = ~apcRowPlaying.(row).if(colors[\green], colors[\amber]);
-    ~apcLEDSet.(sceneNote, want);
+    row = ~apcSceneMap[sceneNote];
+    if(row.notNil) {
+        colors = ~apcColors;
+        want = ~apcRowPlaying.(row).if(colors[\green], colors[\amber]);
+        ~apcLEDSet.(sceneNote, want);
+    };
 };
 
 ~apcAssignScene = { |sceneNote, row|
@@ -251,18 +349,21 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
 ~apcStopColLEDByChan = { |chan|
     var colors, col, want;
-    col = ~apcStopColChanMap[chan]; if(col.isNil) { ^nil };
-    colors = ~apcColors;
-    want = ~apcColPlaying.(col).if(colors[\green], colors[\amber]);
-    ~apcPadLEDch.(52, want, chan);
+    col = ~apcStopColChanMap[chan];
+    if(col.notNil) {
+        colors = ~apcColors;
+        want = ~apcColPlaying.(col).if(colors[\green], colors[\amber]);
+        ~apcPadLEDch.(52, want, chan);
+    };
 };
 
 ~apcStopAllLED = {
     var colors, want;
-    if(~apcStopAllNote.isNil) { ^nil };
-    colors = ~apcColors;
-    want = ~apcAnyGridPlaying.().if(colors[\green], colors[\amber]);
-    ~apcLEDSet.(~apcStopAllNote, want);
+    if(~apcStopAllNote.notNil) {
+        colors = ~apcColors;
+        want = ~apcAnyGridPlaying.().if(colors[\green], colors[\amber]);
+        ~apcLEDSet.(~apcStopAllNote, want);
+    };
 };
 
 ~apcAssignStopColByChan = { |chan, col|
@@ -388,13 +489,13 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
         if(num == masterCC and: { chan == masterCh }) {
             x = ~apcNorm7.(val);
             ~apcApplyParam.(\master_f, x);
-            ^nil;
-        };
-        if(num == stripCC and: { chan >= 0 } and: { chan <= 7 }) {
-            stripIdx = chan + 1;
-            key = ~apcParamKeyFor.(~apcBank, stripIdx);
-            x = ~apcNorm7.(val);
-            ~apcApplyParam.(key, x);
+        } {
+            if(num == stripCC and: { chan >= 0 } and: { chan <= 7 }) {
+                stripIdx = chan + 1;
+                key = ~apcParamKeyFor.(~apcBank, stripIdx);
+                x = ~apcNorm7.(val);
+                ~apcApplyParam.(key, x);
+            };
         };
     });
     "[APC PARAM] Fader CC listener armed".postln; true
@@ -510,38 +611,44 @@ CmdPeriod.remove(~apcCmdPeriodHook);
 ~apcCmdPeriodHook = {
     AppClock.sched(0.0, {
         if(MIDIClient.initialized.not) { MIDIClient.init; };
-        MIDIIn.connectAll;
         ~apcForceAPCOut.();
-        ~apcIntroGenericMode.();
-        ~apcInstallGridListener.();
-        ~apcInstallBankButtons.();
-        ~apcInstallKnobRowButtons.();
-        ~apcInstallFaderCC.();
-        ~apcInstallKnobCC.();
-        ~apcAutoAssignScenes.();
-        ~apcAutoAssignStops.();
-        ~apcRepaintAll.();
-        "[APC] recovered after panic".postln; nil
+        if(~apcOut.notNil) {
+            ~apcIntroGenericMode.();
+            ~apcInstallGridListener.();
+            ~apcInstallBankButtons.();
+            ~apcInstallKnobRowButtons.();
+            ~apcInstallFaderCC.();
+            ~apcInstallKnobCC.();
+            ~apcAutoAssignScenes.();
+            ~apcAutoAssignStops.();
+            ~apcRepaintAll.();
+            "[APC] recovered after panic".postln;
+        };
+        nil
     });
 };
 CmdPeriod.add(~apcCmdPeriodHook);
 
 /* ---------- boot actions ---------- */
 ~apcForceAPCOut.();
-~apcIntroGenericMode.();
-~apcInstallGridListener.();
-~apcInstallBankButtons.();
-~apcInstallKnobRowButtons.();
-~apcInstallFaderCC.();
-~apcInstallKnobCC.();
 
-/* clear all LEDs then repaint and auto-assign defaults */
+/* Only install listeners and configure if APC is actually connected */
 if(~apcOut.notNil) {
+    ~apcIntroGenericMode.();
+    ~apcInstallGridListener.();
+    ~apcInstallBankButtons.();
+    ~apcInstallKnobRowButtons.();
+    ~apcInstallFaderCC.();
+    ~apcInstallKnobCC.();
+
+    /* clear all LEDs then repaint and auto-assign defaults */
     0.to(127).do { |n| ~apcPadLED.(n, ~apcColors[\off]) };
     "[APC] LEDs cleared".postln;
+    ~apcAutoAssignScenes.();
+    ~apcAutoAssignStops.();
+    AppClock.sched(0.25, { ~apcRepaintAll.() });
+} {
+    "[APC] Not connected - skipping listener setup".postln;
 };
-~apcAutoAssignScenes.();
-~apcAutoAssignStops.();
-AppClock.sched(0.25, { ~apcRepaintAll.() });
 )
 
