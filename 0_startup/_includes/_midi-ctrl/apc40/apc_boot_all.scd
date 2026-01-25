@@ -153,10 +153,15 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 ~apcIntroGenericMode = {
     var out, msg;
     out = ~apcOut ?? { ~apcForceAPCOut.() };
-    if(out.isNil) { "[APC] no MIDIOut for SysEx".warn; ^false };
-    msg = Int8Array[240, 71, 127, 41, 96, 0, 4, 64, 1, 1, 0, 247];
-    out.sysex(msg);
-    "[APC] set Generic Mode".postln; true
+    if(out.isNil) {
+        "[APC] no MIDIOut for SysEx".warn;
+        false
+    } {
+        msg = Int8Array[240, 71, 127, 41, 96, 0, 4, 64, 1, 1, 0, 247];
+        out.sysex(msg);
+        "[APC] set Generic Mode".postln;
+        true
+    }
 };
 
 /* ---------- pads and scenes helpers ---------- */
@@ -208,10 +213,12 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
 ~apcSceneLEDByState = { |sceneNote|
     var row, colors, want;
-    row = ~apcSceneMap[sceneNote]; if(row.isNil) { ^nil };
-    colors = ~apcColors;
-    want = ~apcRowPlaying.(row).if(colors[\green], colors[\amber]);
-    ~apcLEDSet.(sceneNote, want);
+    row = ~apcSceneMap[sceneNote];
+    if(row.notNil) {
+        colors = ~apcColors;
+        want = ~apcRowPlaying.(row).if(colors[\green], colors[\amber]);
+        ~apcLEDSet.(sceneNote, want);
+    };
 };
 
 ~apcAssignScene = { |sceneNote, row|
@@ -270,18 +277,21 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
 ~apcStopColLEDByChan = { |chan|
     var colors, col, want;
-    col = ~apcStopColChanMap[chan]; if(col.isNil) { ^nil };
-    colors = ~apcColors;
-    want = ~apcColPlaying.(col).if(colors[\green], colors[\amber]);
-    ~apcPadLEDch.(52, want, chan);
+    col = ~apcStopColChanMap[chan];
+    if(col.notNil) {
+        colors = ~apcColors;
+        want = ~apcColPlaying.(col).if(colors[\green], colors[\amber]);
+        ~apcPadLEDch.(52, want, chan);
+    };
 };
 
 ~apcStopAllLED = {
     var colors, want;
-    if(~apcStopAllNote.isNil) { ^nil };
-    colors = ~apcColors;
-    want = ~apcAnyGridPlaying.().if(colors[\green], colors[\amber]);
-    ~apcLEDSet.(~apcStopAllNote, want);
+    if(~apcStopAllNote.notNil) {
+        colors = ~apcColors;
+        want = ~apcAnyGridPlaying.().if(colors[\green], colors[\amber]);
+        ~apcLEDSet.(~apcStopAllNote, want);
+    };
 };
 
 ~apcAssignStopColByChan = { |chan, col|
@@ -407,13 +417,13 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
         if(num == masterCC and: { chan == masterCh }) {
             x = ~apcNorm7.(val);
             ~apcApplyParam.(\master_f, x);
-            ^nil;
-        };
-        if(num == stripCC and: { chan >= 0 } and: { chan <= 7 }) {
-            stripIdx = chan + 1;
-            key = ~apcParamKeyFor.(~apcBank, stripIdx);
-            x = ~apcNorm7.(val);
-            ~apcApplyParam.(key, x);
+        } {
+            if(num == stripCC and: { chan >= 0 } and: { chan <= 7 }) {
+                stripIdx = chan + 1;
+                key = ~apcParamKeyFor.(~apcBank, stripIdx);
+                x = ~apcNorm7.(val);
+                ~apcApplyParam.(key, x);
+            };
         };
     });
     "[APC PARAM] Fader CC listener armed".postln; true
@@ -530,36 +540,43 @@ CmdPeriod.remove(~apcCmdPeriodHook);
     AppClock.sched(0.0, {
         if(MIDIClient.initialized.not) { MIDIClient.init; };
         ~apcForceAPCOut.();
-        ~apcIntroGenericMode.();
-        ~apcInstallGridListener.();
-        ~apcInstallBankButtons.();
-        ~apcInstallKnobRowButtons.();
-        ~apcInstallFaderCC.();
-        ~apcInstallKnobCC.();
-        ~apcAutoAssignScenes.();
-        ~apcAutoAssignStops.();
-        ~apcRepaintAll.();
-        "[APC] recovered after panic".postln; nil
+        if(~apcOut.notNil) {
+            ~apcIntroGenericMode.();
+            ~apcInstallGridListener.();
+            ~apcInstallBankButtons.();
+            ~apcInstallKnobRowButtons.();
+            ~apcInstallFaderCC.();
+            ~apcInstallKnobCC.();
+            ~apcAutoAssignScenes.();
+            ~apcAutoAssignStops.();
+            ~apcRepaintAll.();
+            "[APC] recovered after panic".postln;
+        };
+        nil
     });
 };
 CmdPeriod.add(~apcCmdPeriodHook);
 
 /* ---------- boot actions ---------- */
 ~apcForceAPCOut.();
-~apcIntroGenericMode.();
-~apcInstallGridListener.();
-~apcInstallBankButtons.();
-~apcInstallKnobRowButtons.();
-~apcInstallFaderCC.();
-~apcInstallKnobCC.();
 
-/* clear all LEDs then repaint and auto-assign defaults */
+/* Only install listeners and configure if APC is actually connected */
 if(~apcOut.notNil) {
+    ~apcIntroGenericMode.();
+    ~apcInstallGridListener.();
+    ~apcInstallBankButtons.();
+    ~apcInstallKnobRowButtons.();
+    ~apcInstallFaderCC.();
+    ~apcInstallKnobCC.();
+
+    /* clear all LEDs then repaint and auto-assign defaults */
     0.to(127).do { |n| ~apcPadLED.(n, ~apcColors[\off]) };
     "[APC] LEDs cleared".postln;
+    ~apcAutoAssignScenes.();
+    ~apcAutoAssignStops.();
+    AppClock.sched(0.25, { ~apcRepaintAll.() });
+} {
+    "[APC] Not connected - skipping listener setup".postln;
 };
-~apcAutoAssignScenes.();
-~apcAutoAssignStops.();
-AppClock.sched(0.25, { ~apcRepaintAll.() });
 )
 

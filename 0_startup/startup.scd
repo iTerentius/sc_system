@@ -65,7 +65,7 @@ s.waitForBoot {
     // "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative;
 
     // Launch Pad Mini - uncomment if you use it
-    // "_includes/_midi-ctrl/launch-pad-mini/lp-param-router.scd".loadRelative;
+    "_includes/_midi-ctrl/launch-pad-mini/lp-param-router.scd".loadRelative;
 
     // --- Mixer channels (with conditional controller bindings)
     "_includes/mixer-channel-16s.scd".loadRelative;
