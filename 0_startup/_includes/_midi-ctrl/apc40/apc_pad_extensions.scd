@@ -18,20 +18,25 @@
 (
 // ---- Object Resolver ----
 // Returns the actual object for a given key (Pdef, Tdef, Ndef, Function, or String)
+// Priority: Function/String > existing Tdef > existing Ndef > Pdef (creates if needed)
 ~apcGetObj = { |key|
-    var obj;
+    var obj, proxySpace;
     if(key.isKindOf(Function) or: { key.isString }) {
         obj = key;
     } {
-        if(Pdef.all[key].notNil) {
-            obj = Pdef(key)
-        } {
+        if(key.isKindOf(Symbol)) {
+            // Check Tdef first (explicit task)
             if(Tdef.all[key].notNil) {
                 obj = Tdef(key)
             } {
-                var proxySpace = Ndef.dictFor(Server.default);
+                // Check Ndef (NodeProxy)
+                proxySpace = Ndef.dictFor(Server.default);
                 if(proxySpace.notNil and: { proxySpace.envir.at(key).notNil }) {
                     obj = Ndef(key)
+                } {
+                    // Default to Pdef - this creates it if it doesn't exist
+                    // (matches original apc_boot_all behavior)
+                    obj = Pdef(key)
                 }
             }
         }
@@ -86,7 +91,8 @@
                 obj.play;
                 ["[APC] Ndef playing:", key].postln;
             };
-            ~apcLEDByState.(note, key);
+            // Defer LED update - NodeProxy state may not update immediately
+            AppClock.sched(0.05, { ~apcLEDByState.(note, key); nil });
         }
         { obj.isKindOf(Tdef) or: { obj.isKindOf(TaskProxy) } } {
             // Tdef: toggle play/stop
@@ -97,7 +103,8 @@
                 obj.play(clock, quant: quant);
                 ["[APC] Tdef playing:", key].postln;
             };
-            ~apcLEDByState.(note, key);
+            // Defer LED update
+            AppClock.sched(0.05, { ~apcLEDByState.(note, key); nil });
         }
         { obj.isKindOf(Pdef) or: { obj.isKindOf(EventPatternProxy) } } {
             // Pdef: toggle play/stop (original behavior)
@@ -108,7 +115,8 @@
                 obj.play(clock, quant: quant);
                 ["[APC] Pdef playing:", key].postln;
             };
-            ~apcLEDByState.(note, key);
+            // Defer LED update
+            AppClock.sched(0.05, { ~apcLEDByState.(note, key); nil });
         };
     } {
         ["[APC] No object found for key:", key].postln;
@@ -117,17 +125,29 @@
 
 // ---- Enhanced LED state (shows state for all object types) ----
 // Now supports custom colors per-pad via binding metadata
-~apcLEDByStateExt = { |note, key|
-    var colors, obj, want, binding, customColor, playColor;
+// Handles both: ~apcLEDByState.(note, key) and ~apcLEDByState.(note, eventBinding)
+~apcLEDByStateExt = { |note, keyOrBinding|
+    var colors, obj, want, binding, actualKey, customColor, playColor, isRunning;
     colors = ~apcColors;
-    obj = ~apcGetObj.(key);
 
-    // Check if this pad has custom color(s) assigned
-    binding = ~apcPadMap[note];
-    if(binding.isKindOf(Event)) {
-        customColor = binding[\color];      // color when stopped
-        playColor = binding[\playColor];    // color when playing (optional)
+    // Handle both old-style (just key) and new-style (event binding) calls
+    // Also handle when ~apcRepaintAll passes the binding directly
+    if(keyOrBinding.isKindOf(Event)) {
+        actualKey = keyOrBinding[\key];
+        customColor = keyOrBinding[\color];
+        playColor = keyOrBinding[\playColor];
+    } {
+        actualKey = keyOrBinding;
+        // Look up colors from the binding if we have just the key
+        binding = ~apcPadMap[note];
+        if(binding.isKindOf(Event)) {
+            customColor = binding[\color];
+            playColor = binding[\playColor];
+        };
     };
+
+    obj = ~apcGetObj.(actualKey);
+    isRunning = ~apcIsRunning.(obj);
 
     if(obj.notNil) {
         case
@@ -135,7 +155,7 @@
             // Functions/Strings: use custom color or default amber
             want = customColor ?? { colors[\amber] };
         }
-        { ~apcIsRunning.(obj) } {
+        { isRunning } {
             // Playing: use playColor, or bright version of customColor, or default green
             want = playColor ?? {
                 if(customColor.notNil) {
@@ -151,8 +171,9 @@
             want = customColor ?? { colors[\amber] };
         };
     } {
-        // No object: off
-        want = colors[\off];
+        // No object found - but if we have a color assigned, use it (pad is "ready")
+        // This allows binding before the Pdef/Ndef exists
+        want = customColor ?? { colors[\off] };
     };
 
     ~apcLEDSet.(note, want);
@@ -247,7 +268,7 @@
     });
 
     MIDIdef.noteOff(nameOff, { |vel, num, chan, src|
-        var binding, key, row, colByChan, hadDown;
+        var binding, key, row, colByChan;
 
         binding = ~apcPadMap[num];
         row = ~apcSceneMap[num];
@@ -255,12 +276,9 @@
 
         if(binding.notNil) {
             if(binding.isKindOf(Event)) { key = binding[\key] } { key = binding };
-
-            hadDown = ~apcIsDown[num] ? false;
-            if(hadDown.not) { ~apcToggleObj.(num, key, 4) };
+            // Just update LED on release, don't toggle again
             ~apcIsDown[num] = false;
             ~apcLEDByState.(num, key);
-            ~apcRepaintStops.();
         } {
             if(row.notNil) { ~apcSceneLEDByState.(num) };
             if(colByChan.notNil) { ~apcStopColLEDByChan.(chan); ~apcStopAllLED.() };

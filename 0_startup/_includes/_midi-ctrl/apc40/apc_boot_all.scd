@@ -162,17 +162,17 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
     if(~apcMidiInDone.isNil) { ~apcMidiInDone = false; };
     if(~apcMidiInDone.not) {
-        apcSrc = MIDIClient.sources.detect { |ep|
+        apcInport = MIDIClient.sources.detectIndex { |ep|
             var d, n;
             d = ep.device.asString;
             n = ep.name.asString;
             d.contains("APC40") or: { n.contains("APC40") }
         };
 
-        if(apcSrc.notNil) {
-            apcInport = 0;
-            { MIDIIn.connect(apcInport, apcSrc) }.try;
-            ["[APC] MIDIIn connected:", apcSrc.device, apcSrc.name].postln;
+        if(apcInport.notNil) {
+            apcSrc = MIDIClient.sources[apcInport];
+            MIDIIn.connect(0, apcSrc);
+            ["[APC] MIDIIn connected (port 0 -> index " ++ apcInport ++ "):", apcSrc.device, apcSrc.name].postln;
             ~apcMidiInDone = true;
         } {
             "[APC] source not found for MIDIIn".warn;

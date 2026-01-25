@@ -4,24 +4,30 @@
 // Fix: Scene Launch keys are now strictly Integers (fixes lookup failure)
 // -----------------------------------------------------------------------------
 
-var pickSrc, pickDest;
+var pickSrcIdx, pickDest, srcIdx;
 
 if(MIDIClient.initialized.not) { MIDIClient.init };
-MIDIIn.connectAll;
 
-pickSrc = { 
-    MIDIClient.sources.detect { |ep| 
-        ep.device == "Launchpad Mini MK3" and: { ep.name.contains("MIDI") } 
-    } 
+pickSrcIdx = {
+    MIDIClient.sources.detectIndex { |ep|
+        ep.device == "Launchpad Mini MK3" and: { ep.name.contains("MIDI") }
+    }
 };
-pickDest = { 
-    MIDIClient.destinations.detect { |ep| 
-        ep.device == "Launchpad Mini MK3" and: { ep.name.contains("MIDI") } 
-    } 
+pickDest = {
+    MIDIClient.destinations.detect { |ep|
+        ep.device == "Launchpad Mini MK3" and: { ep.name.contains("MIDI") }
+    }
 };
 
-~lpMini = IdentityDictionary.new; 
-~lpMini[\src] = pickSrc.();
+~lpMini = IdentityDictionary.new;
+srcIdx = pickSrcIdx.();
+if(srcIdx.notNil) {
+    MIDIIn.connect(srcIdx);
+    ~lpMini[\src] = MIDIClient.sources[srcIdx];
+    ["[LP Mini] MIDIIn connected (index " ++ srcIdx ++ "):", ~lpMini[\src].device].postln;
+} {
+    ~lpMini[\src] = nil;
+};
 ~lpMini[\dst] = pickDest.();
 
 if (~lpMini[\src].isNil) { "CRITICAL: LP Mini MIDI not found!".warn; };

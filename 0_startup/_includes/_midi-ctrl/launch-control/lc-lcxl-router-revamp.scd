@@ -1,11 +1,23 @@
 // 2025-10-26 — Unified LC + LCXL Router (Bank Index + Panic Recovery)
 (
-var pickSrc, pickDest;
+var pickSrcIdx, pickDest, connectDevice;
+
+// Helper to connect a specific device by name
+connectDevice = { |devName|
+    var idx = MIDIClient.sources.detectIndex { |ep| ep.device == devName and: { ep.name != "HUI" } };
+    if(idx.notNil) {
+        MIDIIn.connect(idx);
+        ["[LC/LCXL] Connected (index " ++ idx ++ "):", MIDIClient.sources[idx].device].postln;
+    };
+    idx
+};
+
 // Re-arm on language recompile
 CmdPeriod.add({
-    // Refresh MIDIClient and reconnect
+    // Refresh MIDIClient and reconnect specific devices
     MIDIClient.init;
-    MIDIIn.connectAll;
+    connectDevice.("Launch Control");
+    connectDevice.("Launch Control XL");
 
     // Rebuild MIDIOuts — they go stale post-panic
     ~lcOut = MIDIOut.newByName("Launch Control", "Launch Control");
@@ -29,15 +41,16 @@ CmdPeriod.add({
 });
 
 // Helper functions for robust device discovery
-pickSrc = { |devName| MIDIClient.sources.detect { |ep| ep.device == devName and: { ep.name != "HUI" } } };
+pickSrcIdx = { |devName| MIDIClient.sources.detectIndex { |ep| ep.device == devName and: { ep.name != "HUI" } } };
 pickDest = { |devName| MIDIClient.destinations.detect { |ep| ep.device == devName and: { ep.name != "HUI" } } };
 
-// Initialize MIDI system and resolve endpoints
+// Initialize MIDI system and connect specific devices
 MIDIClient.init;
-MIDIIn.connectAll;
+connectDevice.("Launch Control");
+connectDevice.("Launch Control XL");
 
-~lcSrc   = pickSrc.("Launch Control");
-~lcxlSrc = pickSrc.("Launch Control XL");
+~lcSrc   = pickSrcIdx.("Launch Control").notNil.if { MIDIClient.sources[pickSrcIdx.("Launch Control")] } { nil };
+~lcxlSrc = pickSrcIdx.("Launch Control XL").notNil.if { MIDIClient.sources[pickSrcIdx.("Launch Control XL")] } { nil };
 ~lcOut   = MIDIOut.newByName("Launch Control", "Launch Control");
 ~lcxlOut = MIDIOut.newByName("Launch Control XL", "Launch Control XL");
 

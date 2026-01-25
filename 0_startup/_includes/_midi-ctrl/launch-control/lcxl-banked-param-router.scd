@@ -40,8 +40,15 @@ var lcxl = Environment.make({
 
 	// --- Initialization ---
 	~init = {
+		var srcIdx;
 		MIDIClient.init;
-		MIDIIn.connectAll;
+
+		// Connect only to LCXL, not all devices
+		srcIdx = MIDIClient.sources.detectIndex { |s| s.name.contains(~midiDeviceName) };
+		if(srcIdx.notNil) {
+			MIDIIn.connect(srcIdx);
+			["LCXL: MIDIIn connected (index " ++ srcIdx ++ ")"].postln;
+		};
 
 		// Find the LCXL Destination
 		~midiOut = MIDIOut.newByName("Launch Control XL", "Launch Control XL");
@@ -52,7 +59,7 @@ var lcxl = Environment.make({
 			~midiOut.latency = 0;
 		});
 
-		~srcID = MIDIClient.sources.detect({|s| s.name.contains(~midiDeviceName) }).uid;
+		~srcID = if(srcIdx.notNil) { MIDIClient.sources[srcIdx].uid } { nil };
 
 		// Initialize Responders
 		~makeResponders.value; // <--- FIXED: Added .value
