@@ -1,7 +1,19 @@
 /* 2025-01-24 APC40 mkII Pad Extensions
    Adds support for Functions, Ndefs, and Tdefs (not just Pdefs)
+   Adds custom per-pad colors (like LaunchPad Mini)
    Preserves existing banking functionality from apc_boot_all.scd
-   Load this AFTER apc_boot_all.scd */
+   Load this AFTER apc_boot_all.scd
+
+   Color Usage:
+     ~apcBind.(note, key, quant, color, playColor)
+     - color: Symbol (\red, \blue, \purple, etc.) or Integer (0-127)
+     - playColor: optional, defaults to brighter version of color
+
+   Available colors: \off, \red, \orange, \yellow, \chartreuse, \green,
+     \cyan, \sky, \blue, \purple, \magenta, \pink
+   Each has \dim* and \bright* variants (e.g., \dimRed, \brightRed)
+
+   Run ~apcShowColors.() to list all available color names */
 
 (
 // ---- Object Resolver ----
@@ -104,24 +116,39 @@
 };
 
 // ---- Enhanced LED state (shows state for all object types) ----
+// Now supports custom colors per-pad via binding metadata
 ~apcLEDByStateExt = { |note, key|
-    var colors, obj, want;
+    var colors, obj, want, binding, customColor, playColor;
     colors = ~apcColors;
     obj = ~apcGetObj.(key);
+
+    // Check if this pad has custom color(s) assigned
+    binding = ~apcPadMap[note];
+    if(binding.isKindOf(Event)) {
+        customColor = binding[\color];      // color when stopped
+        playColor = binding[\playColor];    // color when playing (optional)
+    };
 
     if(obj.notNil) {
         case
         { obj.isKindOf(Function) or: { obj.isString } } {
-            // Functions/Strings: always amber (ready to trigger)
-            want = colors[\amber];
+            // Functions/Strings: use custom color or default amber
+            want = customColor ?? { colors[\amber] };
         }
         { ~apcIsRunning.(obj) } {
-            // Playing: green
-            want = colors[\green];
+            // Playing: use playColor, or bright version of customColor, or default green
+            want = playColor ?? {
+                if(customColor.notNil) {
+                    // Try to use a brighter version (add 1-2 to get brighter shade)
+                    (customColor + 1).min(127)
+                } {
+                    colors[\green]
+                }
+            };
         }
         {
-            // Stopped: amber
-            want = colors[\amber];
+            // Stopped: use custom color or default amber
+            want = customColor ?? { colors[\amber] };
         };
     } {
         // No object: off
@@ -134,15 +161,24 @@
 // ---- Override the original LED function ----
 ~apcLEDByState = ~apcLEDByStateExt;
 
-// ---- Enhanced Assign Pad (accepts any object type) ----
-~apcAssignPadExt = { |note, key, quant = 4|
+// ---- Enhanced Assign Pad (accepts any object type + custom colors) ----
+// color: color when stopped (can be Symbol like \red or Integer 0-127)
+// playColor: color when playing (optional, defaults to brighter version of color)
+~apcAssignPadExt = { |note, key, quant = 4, color = nil, playColor = nil|
     var colors = ~apcColors;
     var obj = ~apcGetObj.(key);
+    var resolvedColor, resolvedPlayColor;
+
+    // Resolve color symbols to values
+    resolvedColor = if(color.isKindOf(Symbol)) { colors[color] } { color };
+    resolvedPlayColor = if(playColor.isKindOf(Symbol)) { colors[playColor] } { playColor };
 
     // Store the binding with metadata
     ~apcPadMap[note] = (
         key: key,
         quant: quant,
+        color: resolvedColor,
+        playColor: resolvedPlayColor,
         type: case
             { obj.isKindOf(Function) } { \function }
             { obj.isString } { \string }
@@ -153,7 +189,8 @@
     );
 
     ~apcLEDByState.(note, key);
-    ["[APC] Pad", note, "->", key, "(type:", ~apcPadMap[note][\type], ")"].postln;
+    ["[APC] Pad", note, "->", key, "(type:", ~apcPadMap[note][\type],
+        "color:", resolvedColor ?? "default", ")"].postln;
 };
 
 // ---- Modify the grid listener to use enhanced toggle ----
@@ -236,8 +273,23 @@
 };
 
 // ---- Convenience binding function (like ~lpBind) ----
-~apcBind = { |note, key, quant = 4|
-    ~apcAssignPadExt.(note, key, quant);
+// Usage: ~apcBind.(note, key, quant, color, playColor)
+// color/playColor: Symbol (\red, \blue, etc.) or Integer (0-127)
+// Examples:
+//   ~apcBind.(32, \kick);                        // default colors
+//   ~apcBind.(32, \kick, 4, \red);               // red when stopped, bright red when playing
+//   ~apcBind.(32, \kick, 4, \blue, \brightCyan); // blue stopped, bright cyan playing
+//   ~apcBind.(32, \kick, 4, 45);                 // raw color value 45
+~apcBind = { |note, key, quant = 4, color = nil, playColor = nil|
+    ~apcAssignPadExt.(note, key, quant, color, playColor);
+};
+
+// ---- Helper to list available colors ----
+~apcShowColors = {
+    "Available APC40 colors:".postln;
+    ~apcColors.keys.asArray.sort.do { |k|
+        ["  ", k, "->", ~apcColors[k]].postln;
+    };
 };
 
 // ---- Install the extended listener ----
@@ -255,5 +307,6 @@ CmdPeriod.add(~apcExtPanicHook);
 
 "--- APC40 mkII Pad Extensions Loaded ---".postln;
 "    Supports: Pdef, Tdef, Ndef, Function, String".postln;
-"    Usage: ~apcBind.(noteNum, \\keyOrFunc, quant)".postln;
+"    Usage: ~apcBind.(note, key, quant, color, playColor)".postln;
+"    Colors: ~apcShowColors.() to list available colors".postln;
 )

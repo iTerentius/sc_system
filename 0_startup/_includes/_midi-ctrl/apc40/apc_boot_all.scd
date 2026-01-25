@@ -44,9 +44,81 @@ ensureID.(\apcSceneMap);
 ensureID.(\apcStopColChanMap);
 ensureID.(\apcParamBindings);
 
-/* colors bag */
+/* colors bag - APC40 MK2 supports 128 colors (0-127) via velocity */
 if(~apcColors.isNil or: { ~apcColors.isKindOf(IdentityDictionary).not }) {
-    ~apcColors = IdentityDictionary[\off -> 0, \amber -> 126, \green -> 21];
+    ~apcColors = IdentityDictionary[
+        // Basic states
+        \off -> 0,
+        \on -> 1,
+
+        // Grayscale
+        \dimWhite -> 1,
+        \white -> 3,
+
+        // Reds
+        \dimRed -> 5,
+        \red -> 6,
+        \brightRed -> 7,
+
+        // Oranges
+        \dimOrange -> 9,
+        \orange -> 10,
+        \brightOrange -> 11,
+
+        // Yellows
+        \dimYellow -> 13,
+        \yellow -> 14,
+        \brightYellow -> 15,
+
+        // Chartreuse (yellow-green)
+        \dimChartreuse -> 17,
+        \chartreuse -> 18,
+        \brightChartreuse -> 19,
+
+        // Greens
+        \dimGreen -> 21,
+        \green -> 22,
+        \brightGreen -> 23,
+
+        // Cyan/Teal
+        \dimCyan -> 25,
+        \cyan -> 26,
+        \brightCyan -> 27,
+
+        // Light Blue
+        \dimSky -> 29,
+        \sky -> 30,
+        \brightSky -> 31,
+
+        // Blue
+        \dimBlue -> 33,
+        \blue -> 34,
+        \brightBlue -> 35,
+
+        // Purple/Violet
+        \dimPurple -> 37,
+        \purple -> 38,
+        \brightPurple -> 39,
+
+        // Magenta
+        \dimMagenta -> 41,
+        \magenta -> 42,
+        \brightMagenta -> 43,
+
+        // Pink
+        \dimPink -> 45,
+        \pink -> 46,
+        \brightPink -> 47,
+
+        // Hot colors (for playing states)
+        \hotRed -> 72,
+        \hotOrange -> 84,
+        \hotYellow -> 96,
+        \hotGreen -> 87,
+
+        // Legacy compatibility
+        \amber -> 9  // was 126, now using orange for better visibility
+    ];
 };
 
 /* config bag */
