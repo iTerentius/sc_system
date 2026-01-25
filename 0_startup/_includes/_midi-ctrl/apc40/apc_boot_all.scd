@@ -171,8 +171,8 @@ ensureArray.(\apcBankBtnChans, (0..7).asArray);
 
         if(apcInport.notNil) {
             apcSrc = MIDIClient.sources[apcInport];
-            MIDIIn.connect(apcInport);
-            ["[APC] MIDIIn connected (index " ++ apcInport ++ "):", apcSrc.device, apcSrc.name].postln;
+            MIDIIn.connect(0, apcSrc);
+            ["[APC] MIDIIn connected (port 0 -> index " ++ apcInport ++ "):", apcSrc.device, apcSrc.name].postln;
             ~apcMidiInDone = true;
         } {
             "[APC] source not found for MIDIIn".warn;
