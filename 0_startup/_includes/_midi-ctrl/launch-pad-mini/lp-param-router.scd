@@ -22,9 +22,10 @@ pickDest = {
 ~lpMini = IdentityDictionary.new;
 srcIdx = pickSrcIdx.();
 if(srcIdx.notNil) {
-    MIDIIn.connect(srcIdx);
     ~lpMini[\src] = MIDIClient.sources[srcIdx];
-    ["[LP Mini] MIDIIn connected (index " ++ srcIdx ++ "):", ~lpMini[\src].device].postln;
+    // Use connectAll for cross-platform compatibility (ALSA on Linux needs this)
+    MIDIIn.connectAll;
+    ["[LP Mini] MIDIIn connectAll, found device:", ~lpMini[\src].device].postln;
 } {
     ~lpMini[\src] = nil;
 };
@@ -257,7 +258,7 @@ MIDIdef.noteOn(\lpMini_note, { |vel, note, chan, src|
             ~lpMini[\toggle].(note, bindData);
         };
     };
-}, nil, 0, ~lpMini[\uid]);
+}, nil, nil, nil);  // nil chan & srcID for cross-platform compatibility
 
 MIDIdef.cc(\lpMini_cc, { |val, cc, chan, src|
     if(val > 0) {
@@ -281,7 +282,7 @@ MIDIdef.cc(\lpMini_cc, { |val, cc, chan, src|
             };
         };
     };
-}, nil, 0, ~lpMini[\uid]); 
+}, nil, nil, nil);  // nil chan & srcID for cross-platform compatibility
 
 // --- RECOVERY ---
 CmdPeriod.add({
