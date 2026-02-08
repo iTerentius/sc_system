@@ -196,7 +196,7 @@ MIDIdef.noteOn(\lcxl_pdef_triggers, { |vel, num, chan, src|
     var idx, key;
 
     // inside MIDIdef.noteOn for pad triggers
-    if(src != ~lcxlSrcUid or: { vel <= 0 }) { ^nil };
+    if(src != ~lcxlUID or: { vel <= 0 }) { ^nil };
 
     idx = ~lcxlPdefNotes.indexOf(num);
     if(idx.notNil) {
@@ -204,6 +204,10 @@ MIDIdef.noteOn(\lcxl_pdef_triggers, { |vel, num, chan, src|
         ~lcxlPdefHandle.(key, vel);
     };
 }, nil);
+
+// Initial LED refresh
+~lcn[\refreshLEDs].();
+~lcxlParam[\refreshLEDs].();
 
 "[LC/LCXL routers armed]".postln;
 )
