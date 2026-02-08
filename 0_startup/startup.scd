@@ -19,6 +19,8 @@ case
     // Scarlett 2i2 on macOS (CoreAudio)
     s.options.numOutputBusChannels = 2;
     s.options.numInputBusChannels  = 2;
+    s.options.numOutputBusChannels = 36;
+    s.options.numInputBusChannels = 0;
     s.options.sampleRate = 48000;
     s.options.memSize = 8192;
     s.options.numBuffers = 1024;
@@ -59,10 +61,10 @@ s.waitForBoot {
 
     // --- MIDI Controllers (load conditionally based on detection)
     // APC40 mkII - will self-detect and skip gracefully if not present
-    "_includes/_midi-ctrl/apc40/apc40mk2_loader.scd".loadRelative;
+    // "_includes/_midi-ctrl/apc40/apc40mk2_loader.scd".loadRelative;
 
     // Launch Control XL - uncomment if you use it
-    // "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative;
+    "_includes/_midi-ctrl/launch-control/lc_loader.scd".loadRelative;
 
     // Launch Pad Mini - uncomment if you use it
     "_includes/_midi-ctrl/launch-pad-mini/lp-param-router.scd".loadRelative;
