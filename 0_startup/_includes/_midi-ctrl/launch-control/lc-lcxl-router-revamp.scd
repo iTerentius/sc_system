@@ -20,23 +20,14 @@ CmdPeriod.add({
     connectDevice.("Launch Control XL");
 
     // Rebuild MIDIOuts — they go stale post-panic
-    ~lcOut = MIDIOut.newByName("Launch Control", "Launch Control");
-    ~lcxlOut = MIDIOut.newByName("Launch Control XL", "Launch Control XL");
+    ~lcOut = { MIDIOut.newByName("Launch Control", "Launch Control") }.try;
+    ~lcxlOut = { MIDIOut.newByName("Launch Control XL", "Launch Control XL") }.try;
 
-    // Reinstall MIDIdefs
-    MIDIdef.noteOn(\lcn_banks).permanent_(true);
-    MIDIdef.cc(\lcn_cc).permanent_(true);
-    MIDIdef.noteOn(\lcxl_banks).permanent_(true);
-    MIDIdef.cc(\lcxl_cc).permanent_(true);
-    MIDIdef.noteOn(\lcxl_pdef_triggers).permanent_(true);
-
-    // Restore LED state
-    if (~lcn[\refreshLEDs].notNil) {
-        ~lcn[\refreshLEDs].();
-    };
-    if (~lcxlParam[\refreshLEDs].notNil) {
-        ~lcxlParam[\refreshLEDs].();
-    };
+    // Restore LED state (defer to let MIDIOut settle)
+    {
+        if (~lcn[\refreshLEDs].notNil) { ~lcn[\refreshLEDs].() };
+        if (~lcxlParam[\refreshLEDs].notNil) { ~lcxlParam[\refreshLEDs].() };
+    }.defer(0.2);
     "[LC/LCXL rearmed after CmdPeriod, incl MIDIOut rebuild]".postln;
 });
 
@@ -51,34 +42,36 @@ connectDevice.("Launch Control XL");
 
 ~lcSrc   = pickSrcIdx.("Launch Control").notNil.if { MIDIClient.sources[pickSrcIdx.("Launch Control")] } { nil };
 ~lcxlSrc = pickSrcIdx.("Launch Control XL").notNil.if { MIDIClient.sources[pickSrcIdx.("Launch Control XL")] } { nil };
-~lcOut   = MIDIOut.newByName("Launch Control", "Launch Control");
-~lcxlOut = MIDIOut.newByName("Launch Control XL", "Launch Control XL");
+~lcOut   = { MIDIOut.newByName("Launch Control", "Launch Control") }.try;
+~lcxlOut = { MIDIOut.newByName("Launch Control XL", "Launch Control XL") }.try;
 
 ~lcUID   = ~lcSrc.tryPerform(\uid);
 ~lcxlUID = ~lcxlSrc.tryPerform(\uid);
 
 // --- Launch Control Router ---
 ~lcn = ~lcn ? ();  // param state
-~lcn[\chan0] = nil;  // nil disables channel filter
+~lcn[\chan0] = 8;  // factory template 1 sends on channel 8
 ~lcn[\bankIdx] = 1;
 ~lcn[\noteMap] = [9,10,11,12,25,26,27,28];
 ~lcn[\palette] = (selected: 127, unselected: 10);
 
 ~lcn[\refreshLEDs] = {
-    ~lcn[\noteMap].do { |n, i|
-        var val = ((i+1) == ~lcn[\bankIdx])
-            .if { ~lcn[\palette][\selected] } { ~lcn[\palette][\unselected] };
-        ~lcOut.noteOn(0, n, val);
+    if(~lcOut.notNil) {
+        ~lcn[\noteMap].do { |n, i|
+            var val = ((i+1) == ~lcn[\bankIdx])
+                .if { ~lcn[\palette][\selected] } { ~lcn[\palette][\unselected] };
+            ~lcOut.noteOn(~lcn[\chan0], n, val);
+        };
     };
 };
 
-MIDIdef.noteOn(\lcn_banks, { |vel, num, chan, src|
+MIDIdef.noteOff(\lcn_banks, { |vel, num, chan, src|
     var idx = ~lcn[\noteMap].indexOf(num);
     if (idx.notNil) {
         ~lcn[\bankIdx] = idx + 1;
         ~lcn[\refreshLEDs].();
     }
-}, nil);
+}, nil).permanent_(true);
 
 MIDIdef.cc(\lcn_cc, { |val, num, chan, src|
     var r1 = (21..28).asArray, r2 = (41..48).asArray;
@@ -93,7 +86,7 @@ MIDIdef.cc(\lcn_cc, { |val, num, chan, src|
         };
     };
     if (key.notNil and: { ~lcn[key].notNil }) { ~lcn[key].(val) };
-});
+}).permanent_(true);
 
 // --- Launch Control XL Router ---
 ~lcxlParam = ~lcxlParam ? ();
@@ -103,10 +96,12 @@ MIDIdef.cc(\lcn_cc, { |val, num, chan, src|
 ~lcxlParam[\palette] = (selected: 127, unselected: 10);
 
 ~lcxlParam[\refreshLEDs] = {
-    ~lcxlParam[\noteMap].do { |n, i|
-        var val = ((i+1) == ~lcxlParam[\bankIdx])
-            .if { ~lcxlParam[\palette][\selected] } { ~lcxlParam[\palette][\unselected] };
-        ~lcxlOut.noteOn(0, n, val);
+    if(~lcxlOut.notNil) {
+        ~lcxlParam[\noteMap].do { |n, i|
+            var val = ((i+1) == ~lcxlParam[\bankIdx])
+                .if { ~lcxlParam[\palette][\selected] } { ~lcxlParam[\palette][\unselected] };
+            ~lcxlOut.noteOn(0, n, val);
+        };
     };
     if (~lcxlPdefRefresh.notNil) { ~lcxlPdefRefresh.(); };
 };
@@ -117,7 +112,7 @@ MIDIdef.noteOn(\lcxl_banks, { |vel, num, chan, src|
         ~lcxlParam[\bankIdx] = idx + 1;
         ~lcxlParam[\refreshLEDs].();
     }
-}, nil);
+}, nil).permanent_(true);
 
 ~lcxlParam[\makeKey] = { |strip, row|
     ("b" ++ ~lcxlParam[\bankIdx] ++ "_s" ++ strip ++ "_" ++ row).asSymbol;
@@ -139,7 +134,7 @@ MIDIdef.cc(\lcxl_cc, { |val, num, chan, src|
             };
         };
     };
-});
+}).permanent_(true);
 
 // Pdef row handler (Track Focus)
 ~lcxlPdefMap = Dictionary.new;
@@ -164,50 +159,43 @@ MIDIdef.cc(\lcxl_cc, { |val, num, chan, src|
 };
 
 ~lcxlPdefHandle = { |key, val|
-    var idx, p;
-    // ignore velocity 0 (note-off style messages)
-    if (val <= 0) { ^nil };
-
-    if (~lcxlPdefMap[key].isNil) {
-        idx = ~lcxlPdefNotes.indexOf(
-            ~lcxlPdefNotes.detect { |note|
-                // keep your existing detect logic here
-                true
-            }
-        );
-        if (idx.notNil) { ~lcxlOut.noteOn(0, ~lcxlPdefNotes[idx], 0); };
-        // no postln here
-    } {
-        p = ~lcxlPdefMap[key];
-        if (~lcxlPdefPlaying.includes(key)) {
-            Pdef(p).stop;
-            ~lcxlPdefPlaying.remove(key);
+    if (val > 0) {
+        if (~lcxlPdefMap[key].isNil) {
+            var idx = ~lcxlPdefNotes.indexOf(
+                ~lcxlPdefNotes.detect { |note| true }
+            );
+            if (idx.notNil) { ~lcxlOut.noteOn(0, ~lcxlPdefNotes[idx], 0); };
         } {
-            Pdef(p).play;
-            ~lcxlPdefPlaying.add(key);
+            var p = ~lcxlPdefMap[key];
+            if (~lcxlPdefPlaying.includes(key)) {
+                Pdef(p).stop;
+                ~lcxlPdefPlaying.remove(key);
+            } {
+                Pdef(p).play;
+                ~lcxlPdefPlaying.add(key);
+            };
+            ~lcxlPdefRefresh.();
         };
-        ~lcxlPdefRefresh.();
     };
 };
 
 // 2025-12-11 – pad triggers only from LCXL
 
 MIDIdef.noteOn(\lcxl_pdef_triggers, { |vel, num, chan, src|
-    var idx, key;
-
-    // inside MIDIdef.noteOn for pad triggers
-    if(src != ~lcxlUID or: { vel <= 0 }) { ^nil };
-
-    idx = ~lcxlPdefNotes.indexOf(num);
-    if(idx.notNil) {
-        key = ("b" ++ ~lcxlParam[\bankIdx] ++ "_s" ++ (idx+1) ++ "_p").asSymbol;
-        ~lcxlPdefHandle.(key, vel);
+    if(src == ~lcxlUID and: { vel > 0 }) {
+        var idx = ~lcxlPdefNotes.indexOf(num);
+        if(idx.notNil) {
+            var key = ("b" ++ ~lcxlParam[\bankIdx] ++ "_s" ++ (idx+1) ++ "_p").asSymbol;
+            ~lcxlPdefHandle.(key, vel);
+        };
     };
-}, nil);
+}, nil).permanent_(true);
 
-// Initial LED refresh
-~lcn[\refreshLEDs].();
-~lcxlParam[\refreshLEDs].();
+// Initial LED refresh (defer to let MIDIOut settle)
+{
+    ~lcn[\refreshLEDs].();
+    ~lcxlParam[\refreshLEDs].();
+}.defer(0.2);
 
 "[LC/LCXL routers armed]".postln;
 )
