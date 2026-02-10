@@ -94,6 +94,45 @@ Pdef(\myPat).play(~link);
     wet
 });
 
+// --- Pattern control of playfx params ---
+// Option 1: Control buses (best for multi-source control)
+~r4_freq1 = Bus.control(s, 1).set(220);
+~r4_freq2 = Bus.control(s, 1).set(222);
+
+~r4_fx = ~r4.playfx({ |in|
+    var freq1 = In.kr(~r4_freq1);
+    var freq2 = In.kr(~r4_freq2);
+    var sig = SinOsc.ar([freq1, freq2]) * In.ar(~r4.inbus.index, 2);
+    sig
+});
+
+Pdef(\r4ctrl, Pbind(
+    \type, \set,
+    \id, ~r4_freq1.index,
+    \args, [\value],
+    \value, Pseq([220, 330, 440], inf),
+    \dur, 1
+)).play;
+
+// Option 2: Named controls (simpler, use .set)
+~r4_fx = ~r4.playfx({ |in|
+    var freq1 = \freq1.kr(220);
+    var freq2 = \freq2.kr(222);
+    var sig = SinOsc.ar([freq1, freq2]) * In.ar(~r4.inbus.index, 2);
+    sig
+});
+
+~r4_fx.set(\freq1, 330);              // direct set
+
+Pdef(\r4ctrl, Pbind(                  // pattern control
+    \type, \set,
+    \id, ~r4_fx.nodeID,
+    \args, #[\freq1, \freq2],
+    \freq1, Pwhite(200, 600),
+    \freq2, Pkey(\freq1) + 2,
+    \dur, 0.25
+)).play;
+
 // --- Post-fader sends (e.g. track -> return) ---
 ~ensurePostSend.(~t1, ~r1, 0.3);     // fromChan, toChan, level
 
