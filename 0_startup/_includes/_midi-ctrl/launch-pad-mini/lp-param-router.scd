@@ -136,12 +136,12 @@ if (~lpMini[\src].isNil) { "CRITICAL: LP Mini MIDI not found!".warn; };
     if(obj.notNil) {
         if(obj.isKindOf(Function)) {
             obj.value;
-            ~lpMini[\out].noteOn(0, note, ~lpMini[\colors][\trigger]); 
-            ~lpMini[\ledCache][note] = nil; 
+            if(~lpMini[\out].notNil) { ~lpMini[\out].noteOn(0, note, ~lpMini[\colors][\trigger]) };
+            ~lpMini[\ledCache][note] = nil;
         } {
             if(obj.isString) {
                 obj.interpret;
-                ~lpMini[\out].noteOn(0, note, ~lpMini[\colors][\trigger]);
+                if(~lpMini[\out].notNil) { ~lpMini[\out].noteOn(0, note, ~lpMini[\colors][\trigger]) };
                 ~lpMini[\ledCache][note] = nil;
             } {
                 var isRunning = false;
