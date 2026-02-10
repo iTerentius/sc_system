@@ -142,14 +142,16 @@ MIDIdef.cc(\lcxl_cc, { |val, num, chan, src|
 ~lcxlPdefNotes = [41,42,43,44,57,58,59,60];
 
 ~lcxlPdefRefresh = {
-    var bank = ~lcxlParam[\bankIdx];
-    ~lcxlPdefNotes.do { |note, i|
-        var sym = ("b" ++ bank ++ "_s" ++ (i+1) ++ "_p").asSymbol;
-        var state =
-            (~lcxlPdefPlaying.includes(sym)).if { 60 } {
-                (~lcxlPdefMap.includesKey(sym)).if { 21 } { 0 }
-            };
-        ~lcxlOut.noteOn(0, note, state);
+    if(~lcxlOut.notNil) {
+        var bank = ~lcxlParam[\bankIdx];
+        ~lcxlPdefNotes.do { |note, i|
+            var sym = ("b" ++ bank ++ "_s" ++ (i+1) ++ "_p").asSymbol;
+            var state =
+                (~lcxlPdefPlaying.includes(sym)).if { 60 } {
+                    (~lcxlPdefMap.includesKey(sym)).if { 21 } { 0 }
+                };
+            ~lcxlOut.noteOn(0, note, state);
+        };
     };
 };
 
@@ -164,7 +166,7 @@ MIDIdef.cc(\lcxl_cc, { |val, num, chan, src|
             var idx = ~lcxlPdefNotes.indexOf(
                 ~lcxlPdefNotes.detect { |note| true }
             );
-            if (idx.notNil) { ~lcxlOut.noteOn(0, ~lcxlPdefNotes[idx], 0); };
+            if (idx.notNil and: { ~lcxlOut.notNil }) { ~lcxlOut.noteOn(0, ~lcxlPdefNotes[idx], 0); };
         } {
             var p = ~lcxlPdefMap[key];
             if (~lcxlPdefPlaying.includes(key)) {
