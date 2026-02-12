@@ -47,4 +47,9 @@ if(hasEndpoint.("APC40 mkII")) {
         "[MIDI loader] No known controllers detected — skipping include".postln;
     }
 };
+
+// KeyStep 32 loads independently (keyboard, not a competing controller)
+if(hasEndpoint.("KeyStep 32")) {
+    "/arturia/arturia-keystep-32.scd".loadRelative;
+};
 )
