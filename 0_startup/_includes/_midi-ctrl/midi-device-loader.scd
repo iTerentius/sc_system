@@ -52,4 +52,9 @@ if(hasEndpoint.("APC40 mkII")) {
 if(hasEndpoint.("KeyStep 32")) {
     "/arturia/arturia-keystep-32.scd".loadRelative;
 };
+
+// ROLI LUMI KEY loads independently (keyboard, not a competing controller)
+if(hasEndpoint.("LUMI Keys BLOCK")) {
+    "/roli/lumi-m-piano.scd".loadRelative;
+};
 )

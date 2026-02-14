@@ -153,8 +153,9 @@ SynthDef(\bass8, {
 // One shot sample players
 (
 // --- SynthDefs (unchanged behavior, small consistency tweaks) ---
-SynthDef(\pBs, { |out=0, bufnum=0, amp=0.2, rev=0, rate=1, pan=0, startPos=0, loop=0|
+SynthDef(\pBs, { |out=0, freq=440,  rootNote=60, bufnum=0, amp=0.2, rev=0, rate=1, pan=0, startPos=0, loop=0|
     var sig, sigL, sigR;  // declare vars at top
+    rate = rate * (freq / rootNote.midicps);
     rate = Lag.kr(rate, 0.05) * BufRateScale.kr(bufnum);
     # sigL, sigR = PlayBuf.ar(
         2, bufnum, rate,
@@ -167,8 +168,9 @@ SynthDef(\pBs, { |out=0, bufnum=0, amp=0.2, rev=0, rate=1, pan=0, startPos=0, lo
 }).add;
 );
 (
-SynthDef(\pBm, { |out=0, bufnum=0, amp=0.2, rate=1, pan=0, startPos=0, loop=0|
+SynthDef(\pBm, { |out=0, freq=440, rootNote=60, bufnum=0, amp=0.2, rate=1, pan=0, startPos=0, loop=0|
     var sig;  // declare vars at top
+    rate = rate * (freq / rootNote.midicps);
     sig = PlayBuf.ar(
         1, bufnum, rate * BufRateScale.kr(bufnum),
         loop: loop,
