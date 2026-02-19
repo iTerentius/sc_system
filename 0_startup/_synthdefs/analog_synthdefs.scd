@@ -384,88 +384,88 @@ SynthDef(\sh101Lead, {
 // USAGE EXAMPLES
 // ============================================================================
 
-(
-// Moog-style lead line
-Pdef(\moogSeq,
-    Pbind(
-        \instrument, \moogLead,
-        \scale, Scale.minor,
-        \degree, Pseq([0, 3, 5, 7, 5, 3, 2, 0], inf),
-        \octave, 5,
-        \dur, 0.25,
-        \legato, 0.9,
-        \cutoff, 1200,
-        \resonance, 0.6,
-        \filterEnvAmt, 2500,
-        \lfoRate, 6,
-        \lfoToPitch, 0.005,
-        \osc2Detune, 0.05,
-        \osc3Detune, -0.07
-    )
-);
-)
-
-(
-// Juno-style chords
-Pdef(\junoChords,
-    Pbind(
-        \instrument, \junoChord,
-        \scale, Scale.major,
-        \degree, Pseq([
-            [0, 2, 4],
-            [2, 4, 6],
-            [4, 6, 8],
-            [0, 2, 4]
-        ], inf),
-        \octave, 4,
-        \dur, 2,
-        \legato, 0.95,
-        \cutoff, 2000,
-        \chorusDepth, 0.6,
-        \pwmRate, 0.25,
-        \pwmDepth, 0.5
-    )
-);
-)
-
-(
-// 303-style acid bass
-Pdef(\acid,
-    Pbind(
-        \instrument, \acidBass,
-        \scale, Scale.minor,
-        \degree, Prand([0, 3, 5, 7, 10, 12], inf),
-        \octave, Prand([3, 4], inf),
-        \dur, 0.125,
-        \legato, Pwrand([0.1, 1.5], [0.7, 0.3], inf),  // short vs. slide
-        \slide, Pwrand([0, 1], [0.7, 0.3], inf),
-        \cutoff, Pwhite(400, 1200),
-        \resonance, 0.7,
-        \envMod, 0.8,
-        \decay, Pwhite(0.1, 0.4),
-        \accent, Pwrand([0, 1], [0.7, 0.3], inf),
-        \waveform, 0  // saw wave
-    )
-);
-)
-
-(
-// MS-20 style bass
-Pdef(\ms20,
-    Pbind(
-        \instrument, \ms20Bass,
-        \scale, Scale.minor,
-        \degree, Pseq([0, 0, 3, 5], inf),
-        \octave, 3,
-        \dur, 0.5,
-        \legato, 0.6,
-        \hpfCutoff, 80,
-        \lpfCutoff, 800,
-        \lpfRes, 0.8,
-        \filterEnvAmt, 2000,
-        \ringMod, 0.2
-    )
-);
-)
-
-"Classic Analog SynthDefs loaded! Try the examples above.".postln;
+// (
+// // Moog-style lead line
+// Pdef(\moogSeq,
+//     Pbind(
+//         \instrument, \moogLead,
+//         \scale, Scale.minor,
+//         \degree, Pseq([0, 3, 5, 7, 5, 3, 2, 0], inf),
+//         \octave, 5,
+//         \dur, 0.25,
+//         \legato, 0.9,
+//         \cutoff, 1200,
+//         \resonance, 0.6,
+//         \filterEnvAmt, 2500,
+//         \lfoRate, 6,
+//         \lfoToPitch, 0.005,
+//         \osc2Detune, 0.05,
+//         \osc3Detune, -0.07
+//     )
+// );
+// )
+//
+// (
+// // Juno-style chords
+// Pdef(\junoChords,
+//     Pbind(
+//         \instrument, \junoChord,
+//         \scale, Scale.major,
+//         \degree, Pseq([
+//             [0, 2, 4],
+//             [2, 4, 6],
+//             [4, 6, 8],
+//             [0, 2, 4]
+//         ], inf),
+//         \octave, 4,
+//         \dur, 2,
+//         \legato, 0.95,
+//         \cutoff, 2000,
+//         \chorusDepth, 0.6,
+//         \pwmRate, 0.25,
+//         \pwmDepth, 0.5
+//     )
+// );
+// )
+//
+// (
+// // 303-style acid bass
+// Pdef(\acid,
+//     Pbind(
+//         \instrument, \acidBass,
+//         \scale, Scale.minor,
+//         \degree, Prand([0, 3, 5, 7, 10, 12], inf),
+//         \octave, Prand([3, 4], inf),
+//         \dur, 0.125,
+//         \legato, Pwrand([0.1, 1.5], [0.7, 0.3], inf),  // short vs. slide
+//         \slide, Pwrand([0, 1], [0.7, 0.3], inf),
+//         \cutoff, Pwhite(400, 1200),
+//         \resonance, 0.7,
+//         \envMod, 0.8,
+//         \decay, Pwhite(0.1, 0.4),
+//         \accent, Pwrand([0, 1], [0.7, 0.3], inf),
+//         \waveform, 0  // saw wave
+//     )
+// );
+// )
+//
+// (
+// // MS-20 style bass
+// Pdef(\ms20,
+//     Pbind(
+//         \instrument, \ms20Bass,
+//         \scale, Scale.minor,
+//         \degree, Pseq([0, 0, 3, 5], inf),
+//         \octave, 3,
+//         \dur, 0.5,
+//         \legato, 0.6,
+//         \hpfCutoff, 80,
+//         \lpfCutoff, 800,
+//         \lpfRes, 0.8,
+//         \filterEnvAmt, 2000,
+//         \ringMod, 0.2
+//     )
+// );
+// )
+//
+// "Classic Analog SynthDefs loaded! Try the examples above.".postln;
