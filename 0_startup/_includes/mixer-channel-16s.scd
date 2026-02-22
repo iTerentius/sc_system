@@ -46,21 +46,41 @@ var chan;  // declare vars at top
 ~r3 = MixerChannel.new(\r3, s, 2, 2, outbus: ~m1.inbus);
 ~r4 = MixerChannel.new(\r4, s, 2, 2, outbus: ~m1.inbus);
 
+// control buses for r1/r2 fx params – write from song files to change live
+~r1_mix  = Bus.control(s, 1).set(1.0);
+~r1_room = Bus.control(s, 1).set(0.8);
+~r1_damp = Bus.control(s, 1).set(0.2);
+~r2_dt   = Bus.control(s, 1).set(0.25);
+~r2_dec  = Bus.control(s, 1).set(0.6);
+
 // r1 reverb. read bus explicitly and return wet. do not call Out or ReplaceOut here
 ~r1_fx = ~r1.playfx({ |in|
-    var sig, wet;  // declare vars at top
+    var sig, wet;
     sig = In.ar(~r1.inbus.index, 2);
-    wet = FreeVerb2.ar(sig[0], sig[1], mix: 1, room: 0.8, damp: 0.2);
+    wet = FreeVerb2.ar(sig[0], sig[1], \mix.kr(1.0), \room.kr(0.8), \damp.kr(0.2));
     wet
 });
+~r1.effectgroup.map(\mix, ~r1_mix.index, \room, ~r1_room.index, \damp, ~r1_damp.index);
 
 // r2 delay. same pattern
 ~r2_fx = ~r2.playfx({ |in|
     var sig, wet;
     sig = In.ar(~r2.inbus.index, 2);
-    wet = CombL.ar(sig, maxdelaytime: 0.4, delaytime: 0.25, decaytime: 0.6);
+    wet = CombL.ar(sig, maxdelaytime: 0.4, delaytime: \dt.kr(0.25), decaytime: \dec.kr(0.6));
     wet
 });
+~r2.effectgroup.map(\dt, ~r2_dt.index, \dec, ~r2_dec.index);
+
+// setters – pass nil to skip a param
+~setR1 = { |mix, room, damp|
+    mix.notNil.if  { ~r1_mix.set(mix)   };
+    room.notNil.if { ~r1_room.set(room) };
+    damp.notNil.if { ~r1_damp.set(damp) };
+};
+~setR2 = { |dt, dec|
+    dt.notNil.if  { ~r2_dt.set(dt)   };
+    dec.notNil.if { ~r2_dec.set(dec) };
+};
 
 // submix example. perc feeds t1
 ~perc = MixerChannel.new(\perc, s, 2, 2, outbus: ~t1.inbus);
