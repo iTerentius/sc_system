@@ -69,6 +69,8 @@ s.waitForBoot {
     // Launch Pad Mini - uncomment if you use it
     "_includes/_midi-ctrl/launch-pad-mini/lp-param-router.scd".loadRelative;
 
+    s.sync; // ensure all SynthDefs are registered on server before mixer init
+
     // --- Mixer channels (with conditional controller bindings)
     "_includes/mixer-channel-16s.scd".loadRelative;
 
