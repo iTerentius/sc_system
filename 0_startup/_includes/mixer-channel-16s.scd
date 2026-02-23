@@ -75,6 +75,28 @@ var chan;  // declare vars at top
     dec.notNil.if { ~r2_fx.set(\dec, dec) };
 };
 
+// r3 biscuit. fork + s.sync ensures \biscuit SynthDef has reached server before Synth()
+{
+    s.sync;
+    ~r3_fx = Synth(\biscuit, [
+        \in,      ~r3.inbus.index,
+        \out,     ~r3.inbus.index,
+        \naked,   0.0,
+        \dressed, 1.0
+    ], ~r3.effectgroup);
+}.fork;
+~setR3 = { |drive, clock, bits, fxMode, shape, filterFreq, filterQ, naked, dressed|
+    drive.notNil.if      { ~r3_fx.set(\drive,      drive)      };
+    clock.notNil.if      { ~r3_fx.set(\clock,      clock)      };
+    bits.notNil.if       { ~r3_fx.set(\bits,       bits)       };
+    fxMode.notNil.if     { ~r3_fx.set(\fxMode,     fxMode)     };
+    shape.notNil.if      { ~r3_fx.set(\shape,      shape)      };
+    filterFreq.notNil.if { ~r3_fx.set(\filterFreq, filterFreq) };
+    filterQ.notNil.if    { ~r3_fx.set(\filterQ,    filterQ)    };
+    naked.notNil.if      { ~r3_fx.set(\naked,      naked)      };
+    dressed.notNil.if    { ~r3_fx.set(\dressed,    dressed)    };
+};
+
 // submix example. perc feeds t1
 ~perc = MixerChannel.new(\perc, s, 2, 2, outbus: ~t1.inbus);
 ~pbd1 = MixerChannel.new(\pbd1, s, 2, 2, outbus: ~perc.inbus);
