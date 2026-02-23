@@ -201,68 +201,68 @@ Pdef(\modelD, Pbind(
 
     // --- pitch / gate ---
     \scale,        Scale.minor,
-    \degree,       0,
-    \octave,       4,
-    \dur,          1,
-    \legato,       0.8,
-    \amp,          0.7,
+    \degree,       0,            // integer, scale degree
+    \octave,       4,            // integer, 0..8
+    \dur,          1,            // beats
+    \legato,       0.8,          // 0..2+   (>1 = overlapping gates)
+    \amp,          0.7,          // 0..1
 
     // --- glide ---
-    \glide,        0.0,
+    \glide,        0.0,          // 0..10 sec  portamento time (semitone space)
 
     // --- osc 1 ---
-    \osc1Wave,     2,            // 0=tri 1=inv-saw 2=saw 3=sq 4=wide 5=narrow
-    \osc1Oct,      0,
+    \osc1Wave,     2,            // 0..5   0=tri 1=inv-saw 2=saw 3=sq 4=wide 5=narrow
+    \osc1Oct,      0,            // -3..+3  integer octave offset
 
     // --- osc 2 ---
-    \osc2Wave,     2,
-    \osc2Oct,      0,
-    \osc2Fine,     0.0,          // semitones ±7
+    \osc2Wave,     2,            // 0..5
+    \osc2Oct,      0,            // -3..+3
+    \osc2Fine,     0.0,          // ±7 semitones   hardware fine-tune range
 
-    // --- osc 3 ---
-    \osc3Wave,     0,            // triangle good for LFO
-    \osc3Oct,      0,
-    \osc3Fine,     0.0,
-    \osc3KbdTrack, 1,            // 0=free LFO
-    \osc3Freq,     1.0,          // LFO Hz when osc3KbdTrack=0
+    // --- osc 3 (keyboard follower or free LFO) ---
+    \osc3Wave,     0,            // 0..5   triangle (0) recommended for LFO
+    \osc3Oct,      0,            // -3..+3  kbd mode only
+    \osc3Fine,     0.0,          // ±7 semitones   kbd mode only
+    \osc3KbdTrack, 1,            // 0/1    0=free LFO at osc3Freq, 1=follows keyboard
+    \osc3Freq,     1.0,          // 0.1..50 Hz   LFO rate when osc3KbdTrack=0
 
-    // --- mixer ---
-    \osc1Lvl,      0.7,
-    \osc2Lvl,      0.7,
-    \osc3Lvl,      0.0,
-    \noiseLvl,     0.0,
-    \noiseType,    0,            // 0=white 1=pink
+    // --- oscillator mixer ---
+    \osc1Lvl,      0.7,          // 0..1
+    \osc2Lvl,      0.7,          // 0..1
+    \osc3Lvl,      0.0,          // 0..1   add OSC3 as audio VCO
+    \noiseLvl,     0.0,          // 0..1
+    \noiseType,    0,            // 0/1    0=white, 1=pink
 
-    // --- filter ---
-    \cutoff,       1000,
-    \emphasis,     0.2,          // self-oscillates above ~0.88
-    \kbdAmt,       0.5,
-    \contourAmt,   0.5,
-    \drive,        0.0,
+    // --- filter (MoogFF 24dB/oct LP only) ---
+    \cutoff,       1000,         // 20..20000 Hz
+    \emphasis,     0.2,          // 0..1   resonance; self-oscillates above ~0.88
+    \kbdAmt,       0.5,          // 0..1   keyboard tracking (1=full 1:1 at 440Hz)
+    \contourAmt,   0.5,          // 0..1   filter EG depth, up to +4 oct at peak
+    \drive,        0.0,          // 0..1   pre-filter saturation (max ~×9)
 
-    // --- filter contour ---
-    \fAtk,         0.001,
-    \fDcy,         0.3,
-    \fSus,         0.5,
+    // --- filter contour (ADS) ---
+    \fAtk,         0.001,        // 0.001..5 sec
+    \fDcy,         0.3,          // 0.001..10 sec
+    \fSus,         0.5,          // 0..1
 
-    // --- amp contour ---
-    \aAtk,         0.001,
-    \aDcy,         0.3,
-    \aSus,         0.9,
+    // --- amp contour (ADS) ---
+    \aAtk,         0.001,        // 0.001..5 sec
+    \aDcy,         0.3,          // 0.001..10 sec
+    \aSus,         0.9,          // 0..1
 
     // --- decay switch (shared by both envelopes) ---
-    \decayOn,      1,            // 1=release@decay 0=sustain-hold
+    \decayOn,      1,            // 0/1   1=release@decaytime  0=sustain-hold (60s rel)
 
     // --- mod wheel ---
-    \modWheel,     0.0,
-    \modToOsc,     0,            // 1=mod → OSC pitch (±5st)
-    \modToFilter,  0,            // 1=mod → filter cutoff (±2 oct)
-    \modSource,    0,            // 0=OSC3, 1=noise
+    \modWheel,     0.0,          // 0..1   scales mod depth
+    \modToOsc,     0,            // 0/1   1=mod → OSC1+2 pitch (±5 semitones max)
+    \modToFilter,  0,            // 0/1   1=mod → filter cutoff (±2 octaves max)
+    \modSource,    0,            // 0/1   0=OSC3, 1=white noise
 
-    // --- cv / patch bay ---
-    \cvOsc1,       0.0,          // semitones
-    \cvOsc2,       0.0,
-    \cvOsc3,       0.0,
-    \cvFilt,       0.0,          // octaves
-    \cvAmp,        1.0,
+    // --- cv / patch bay (use synth.map(\cv*, bus) as patch cable) ---
+    \cvOsc1,       0.0,          // semitones  exponential pitch offset OSC1
+    \cvOsc2,       0.0,          // semitones  exponential pitch offset OSC2
+    \cvOsc3,       0.0,          // semitones  exponential pitch offset OSC3 (kbd mode)
+    \cvFilt,       0.0,          // octaves    exponential cutoff offset
+    \cvAmp,        1.0,          // 0..2       VCA gain from patch bay
 ));

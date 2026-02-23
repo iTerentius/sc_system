@@ -183,6 +183,78 @@ Pdef(\bDel, Pbind(
 ~r3_fx.set(\fxMode, 1, \delTime, 0.375, \delFB, 0.85);
 
 // =============================================================================
+// FULL DEFAULTS TEMPLATE  (all args, defaults, and ranges)
+// =============================================================================
+// \type \set Pdef — use as a starting point or reset snapshot.
+// Change \id to target a different synth node.
+// Change individual values to pattern streams for timed automation.
+
+Pdef(\bCtl, Pbind(
+    \type,       \set,
+    \id,         ~r3_fx.nodeID,
+    \args,       #[\drive, \clock, \bits,
+                   \b1, \b2, \b3, \b4, \b5, \b6, \b7, \b8,
+                   \fxMode, \shape,
+                   \delTime, \delFB,
+                   \pitchShift,
+                   \stepRate, \sf0, \sf1, \sf2, \sf3,
+                   \filterType, \filterFreq, \filterQ,
+                   \naked, \dressed],
+
+    // --- input ---
+    \drive,      1.0,    // 1.0..5.6    input gain (+0 to +15dB), post-softclip
+
+    // --- bitcrusher ---
+    \clock,      30000,  // 250..30000 Hz   ADC sample rate (30000 = transparent)
+    \bits,       8,      // 1..8            bit depth (8 = transparent)
+
+    // --- bit manipulation (b1=LSB/bit0 ... b8=MSB/bit7) ---
+    \b1,         1,      // -1/0/1   -1=invert, 0=mute, 1=pass  (LSB, subtle)
+    \b2,         1,      // -1/0/1
+    \b3,         1,      // -1/0/1
+    \b4,         1,      // -1/0/1
+    \b5,         1,      // -1/0/1
+    \b6,         1,      // -1/0/1
+    \b7,         1,      // -1/0/1
+    \b8,         1,      // -1/0/1   (MSB, large tonal impact)
+
+    // --- fx mode ---
+    \fxMode,     0,      // 0..3    0=waveshaper, 1=delay, 2=pitch, 3=step filter
+
+    // --- waveshaper (fxMode=0) ---
+    \shape,      0,      // 0..7    SelectX crossfades between shapes
+                         //   0=fold  1=bat-fuzz  2=rectify  3=bitswap
+                         //   4=alt-rect  5=biscuit(-5th)  6=synth-saw  7=synth-sq
+
+    // --- delay (fxMode=1) ---
+    \delTime,    0.25,   // 0.001..2.0 sec
+    \delFB,      0.3,    // 0..1   (above ~0.9 → runaway feedback)
+
+    // --- pitch shifter (fxMode=2) ---
+    \pitchShift, 5,      // 0..7   preset index
+                         //   0=−2oct  1=−5th  2=−1oct  3=−5th
+                         //   4=−4th   5=unison  6=+5th  7=+1oct
+
+    // --- step filter (fxMode=3) ---
+    \stepRate,   4.0,    // 0.1..40 Hz   step advance clock
+    \sf0,        200,    // 20..20000 Hz  step 0 LP cutoff
+    \sf1,        400,    // 20..20000 Hz  step 1 LP cutoff
+    \sf2,        800,    // 20..20000 Hz  step 2 LP cutoff
+    \sf3,        1600,   // 20..20000 Hz  step 3 LP cutoff
+
+    // --- analog output filter (2-pole, 12dB/oct) ---
+    \filterType, 0,      // 0..2    0=LP, 1=BP, 2=HP  (SelectX crossfades)
+    \filterFreq, 15000,  // 20..20000 Hz   cutoff (15000 = open/transparent)
+    \filterQ,    0.1,    // 0..1    0=flat (rq=1.0), 1=resonant (rq=0.1)
+
+    // --- wet/dry ---
+    \naked,      1.0,    // 0..1   dry level
+    \dressed,    1.0,    // 0..1   wet level
+
+    \dur,        1,      // beats between events (set to inf for one-shot)
+)).play(~link);
+
+// =============================================================================
 // CLEANUP
 // =============================================================================
 

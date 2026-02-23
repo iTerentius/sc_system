@@ -186,75 +186,75 @@ Pdef(\neutron, Pbind(
 
     // --- pitch / gate ---
     \scale,      Scale.minor,
-    \degree,     0,
-    \octave,     4,
-    \dur,        1,
-    \legato,     0.8,
-    \amp,        0.7,
+    \degree,     0,           // integer, scale degree
+    \octave,     4,           // integer, 0..8
+    \dur,        1,           // beats
+    \legato,     0.8,         // 0..2+  (>1 = overlapping gates)
+    \amp,        0.7,         // 0..1
 
-    // --- osc 1 ---
-    \osc1Blend,  0.0,        // 0=saw 1=pulse
-    \osc1PW,     0.5,
-    \osc1Oct,    0,
+    // --- osc 1 (CEM3340: saw + pulse) ---
+    \osc1Blend,  0.0,         // 0..1      0=saw, 1=pulse
+    \osc1PW,     0.5,         // 0.01..0.99  pulse width
+    \osc1Oct,    0,           // -3..+3    integer octave offset
 
-    // --- osc 2 ---
-    \osc2Blend,  0.0,        // 0=saw 0.5=pulse 1=tri
-    \osc2PW,     0.5,
-    \osc2Oct,    0,
-    \osc2Semi,   0.0,
-    \osc2Fine,   0.0,
-    \osc2Track,  1,          // 0=free-running
-    \sync,       0,
+    // --- osc 2 (CEM3340: saw + pulse + tri) ---
+    \osc2Blend,  0.0,         // 0..1      0=saw, 0.5=pulse, 1=tri
+    \osc2PW,     0.5,         // 0.01..0.99
+    \osc2Oct,    0,           // -3..+3    integer octave offset
+    \osc2Semi,   0.0,         // ±24 semitones   coarse detune
+    \osc2Fine,   0.0,         // ±100 cents      fine detune
+    \osc2Track,  1,           // 0/1       0=free-running (second LFO)
+    \sync,       0,           // 0/1       hard sync OSC2 → OSC1
 
-    // --- mixer ---
-    \osc1Lvl,    0.7,
-    \osc2Lvl,    0.7,
-    \subLvl,     0.0,
-    \noiseLvl,   0.0,
+    // --- oscillator mixer ---
+    \osc1Lvl,    0.7,         // 0..1
+    \osc2Lvl,    0.7,         // 0..1
+    \subLvl,     0.0,         // 0..1      square, -1 oct from OSC1
+    \noiseLvl,   0.0,         // 0..1      white noise
 
-    // --- lfo ---
-    \lfoRate,    1.0,
-    \lfoShape,   0,          // 0=sin 1=tri 2=saw 3=ramp 4=square
-    \lfoToOsc1,  0.0,
-    \lfoToOsc2,  0.0,
-    \lfoToPW1,   0.0,
-    \lfoToPW2,   0.0,
-    \lfoToFilt,  0.0,
+    // --- lfo (audio-rate capable) ---
+    \lfoRate,    1.0,         // 0.01..10000 Hz  (audio-rate above ~20)
+    \lfoShape,   0,           // 0..4      0=sin 1=tri 2=saw 3=ramp 4=square
+    \lfoToOsc1,  0.0,         // -1..+1    ±5% pitch mod on OSC1
+    \lfoToOsc2,  0.0,         // -1..+1    ±5% pitch mod on OSC2
+    \lfoToPW1,   0.0,         // -1..+1    ±0.4 pulse-width sweep OSC1
+    \lfoToPW2,   0.0,         // -1..+1    ±0.4 pulse-width sweep OSC2
+    \lfoToFilt,  0.0,         // -1..+1    ±24 semitones of cutoff
 
-    // --- filter ---
-    \cutoff,     2000,
-    \res,        0.2,        // self-oscillates above ~0.88
-    \filterMode, 0,          // 0=LP 1=BP 2=HP
-    \keyTrack,   0.0,
-    \env1Amt,    0.5,        // signed -1..1
+    // --- filter (2-pole SVF) ---
+    \cutoff,     2000,        // 20..20000 Hz
+    \res,        0.2,         // 0..1      self-oscillates above ~0.88
+    \filterMode, 0,           // 0..2      0=LP 1=BP 2=HP  (fractional crossfade)
+    \keyTrack,   0.0,         // 0..1      1=cutoff tracks keyboard 1:1
+    \env1Amt,    0.5,         // -1..+1    ENV1 depth (neg = inverted), ±36 semitones
 
     // --- env 1 (filter) ---
-    \atk1,       0.01,
-    \dcy1,       0.3,
-    \sus1,       0.5,
-    \rel1,       0.3,
+    \atk1,       0.01,        // 0.001..30 sec
+    \dcy1,       0.3,         // 0.001..30 sec
+    \sus1,       0.5,         // 0..1
+    \rel1,       0.3,         // 0.001..30 sec
 
-    // --- env 2 (amp) ---
-    \atk2,       0.01,
-    \dcy2,       0.1,
-    \sus2,       0.9,
-    \rel2,       0.3,
+    // --- env 2 (amp/VCA) ---
+    \atk2,       0.01,        // 0.001..30 sec
+    \dcy2,       0.1,         // 0.001..30 sec
+    \sus2,       0.9,         // 0..1
+    \rel2,       0.3,         // 0.001..30 sec
 
-    // --- drive ---
-    \drive,      0.0,
-    \driveTone,  1.0,
-    \driveLevel, 0.5,
+    // --- overdrive ---
+    \drive,      0.0,         // 0..1      gain up to ×21 pre-softclip
+    \driveTone,  1.0,         // 0..1      LP rolloff: 0=500Hz dark, 1=12kHz bright
+    \driveLevel, 0.5,         // 0..1      post-drive output level
 
-    // --- delay ---
-    \delTime,    0.25,
-    \delFB,      0.3,
-    \delMix,     0.0,
+    // --- BBD delay ---
+    \delTime,    0.25,        // 0.001..2.0 sec
+    \delFB,      0.3,         // 0..1      (above ~0.9 → runaway feedback)
+    \delMix,     0.0,         // 0..1      0=dry only, 1=wet only
 
-    // --- cv / patch bay ---
-    \cvOsc1,     0.0,
-    \cvOsc2,     0.0,
-    \cvFilt,     0.0,
-    \cvPW1,      0.0,
-    \cvPW2,      0.0,
-    \cvAmp,      1.0,
+    // --- cv / patch bay (use synth.map(\cv*, bus) as patch cable) ---
+    \cvOsc1,     0.0,         // semitones  exponential pitch offset OSC1
+    \cvOsc2,     0.0,         // semitones  exponential pitch offset OSC2
+    \cvFilt,     0.0,         // semitones  exponential cutoff offset
+    \cvPW1,      0.0,         // -1..+1     direct pulse-width offset OSC1
+    \cvPW2,      0.0,         // -1..+1     direct pulse-width offset OSC2
+    \cvAmp,      1.0,         // 0..2       VCA gain from patch bay
 ));
