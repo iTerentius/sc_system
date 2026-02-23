@@ -108,7 +108,7 @@ SynthDef(\neutron, {
     var osc1Freq = freq * (2 ** osc1Oct)
         * (cvOsc1 / 12 + 1)
         * (lfoToOsc1 * lfo * 0.05 + 1);
-    var pw1  = (osc1PW + lfoToPW1 * lfo * 0.4 + cvPW1).clip(0.01, 0.99);
+    var pw1  = (osc1PW + (lfoToPW1 * lfo * 0.4) + cvPW1).clip(0.01, 0.99);
     var osc1 = XFade2.ar(
         LFSaw.ar(osc1Freq),                      // bipolar saw [-1, 1]
         LFPulse.ar(osc1Freq, 0, pw1) * 2 - 1,
@@ -123,7 +123,7 @@ SynthDef(\neutron, {
         * (osc2Fine / 1200 + 1)
         * (cvOsc2 / 12 + 1)
         * (lfoToOsc2 * lfo * 0.05 + 1)).max(0.5);
-    var pw2     = (osc2PW + lfoToPW2 * lfo * 0.4 + cvPW2).clip(0.01, 0.99);
+    var pw2     = (osc2PW + (lfoToPW2 * lfo * 0.4) + cvPW2).clip(0.01, 0.99);
     var osc2Saw = SelectX.ar(sync, [
         LFSaw.ar(osc2Freq),
         SyncSaw.ar(osc1Freq, osc2Freq) * 2 - 1  // hard sync approximation
@@ -135,10 +135,10 @@ SynthDef(\neutron, {
 
     // ── OSCILLATOR MIXER ─────────────────────────────────────────────────────
     var mixSig = (
-        osc1 * osc1Lvl +
-        osc2 * osc2Lvl +
-        sub  * subLvl  +
-        WhiteNoise.ar * noiseLvl
+        (osc1 * osc1Lvl) +
+        (osc2 * osc2Lvl) +
+        (sub  * subLvl)  +
+        (WhiteNoise.ar * noiseLvl)
     ) * 0.25;
 
     // ── ENV 1 (filter) ───────────────────────────────────────────────────────
@@ -163,10 +163,10 @@ SynthDef(\neutron, {
     var fRaw    = SelectX.ar(filterMode, [fLP, fBP, fHP]);
     // Self-oscillation crossfade: SinOsc blends in as res crosses 0.88 → 1.0
     var soAmt   = (res - 0.88).max(0) / 0.12;
-    var filtered = (fRaw + SinOsc.ar(fCutoff) * soAmt * 0.5).tanh;
+    var filtered = (fRaw + (SinOsc.ar(fCutoff) * soAmt * 0.5)).softclip;
 
     // ── OVERDRIVE ────────────────────────────────────────────────────────────
-    var drivenRaw  = (filtered * (1 + drive * 20)).tanh;
+    var drivenRaw  = (filtered * (1 + drive * 20)).softclip;
     var drivenTone = LPF.ar(drivenRaw, driveTone.linexp(0, 1, 500, 12000)) * driveLevel;
     var afterOD    = XFade2.ar(filtered, drivenTone, drive * 2 - 1);
 
@@ -175,7 +175,7 @@ SynthDef(\neutron, {
     var vcaOut = afterOD * env2 * amp * cvAmp;
 
     // ── BBD DELAY ────────────────────────────────────────────────────────────
-    var dline = DelayL.ar(vcaOut + delFBsig * delFB, 2.0, delTime.clip(0.001, 2.0));
+    var dline = DelayL.ar(vcaOut + (delFBsig * delFB), 2.0, delTime.clip(0.001, 2.0));
     var final = XFade2.ar(vcaOut, dline, delMix * 2 - 1);
 
     // ── WRITE DELAY FEEDBACK (statements last, after all var declarations) ────
