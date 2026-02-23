@@ -56,6 +56,7 @@ s.waitForBoot {
     "_synthdefs/synths_common.scd".loadRelative;
     "_synthdefs/analog_synthdefs.scd".loadRelative;
     "_synthdefs/neutron.scd".loadRelative;
+    "_synthdefs/model_d.scd".loadRelative;
     "_synthdefs/biscuit.scd".loadRelative;
     "_includes/sample_loader.scd".loadRelative;
 
