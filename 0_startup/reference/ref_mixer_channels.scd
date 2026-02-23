@@ -91,51 +91,51 @@ Pdef(\r4ctrl, Pbind(                  // pattern control
 ~ensurePostSend.(~t1, ~r1, 0.3);     // fromChan, toChan, level
 
 // --- Built-in return FX (r1/r2) ---
-// Returns already have FX wired and exposed as control buses:
-//   ~r1 = FreeVerb2 (reverb)   buses: ~r1_mix ~r1_room ~r1_damp
-//   ~r2 = CombL (delay)        buses: ~r2_dt ~r2_dec
+// Returns already have FX wired with named controls:
+//   ~r1 = FreeVerb2 (reverb)   controls: \mix \room \damp
+//   ~r2 = CombL (delay)        controls: \dt \dec
 //   ~r3, ~r4 = dry (wire your own with the pattern below)
 //
 // Direct set via helper (pass nil to skip a param):
 ~setR1.(mix: 0.6, room: 0.9, damp: 0.3);
 ~setR2.(dt: 0.375, dec: 1.5);
 //
-// Or write to buses directly:
-~r1_room.set(0.95);
-~r2_dt.set(0.5);
+// Or set named controls directly on the synth:
+~r1_fx.set(\room, 0.95);
+~r2_fx.set(\dt, 0.5);
 
 // --- Design pattern: song-specific FX on a return ---
 // Use this when wiring ~r3 or ~r4 with params you want to set/pattern later.
-// Step 1: create a control bus per param
-~r3_crush = Bus.control(s, 1).set(8);
-~r3_mix   = Bus.control(s, 1).set(0.7);
-// Step 2: use named controls inside playfx
+// Note: playfx is async, so bus mapping at init time is unreliable.
+//       Store the returned synth and use .set on it instead.
+//
+// Step 1: use named controls inside playfx, store the returned synth
 ~r3_fx = ~r3.playfx({ |in|
     var sig = In.ar(~r3.inbus.index, 2);
     var wet = Decimator.ar(sig, 44100, \crush.kr(8));
     XFade2.ar(sig, wet, (\mix.kr(0.7) * 2) - 1)
 });
-// Step 3: map effectgroup controls to those buses
-~r3.effectgroup.map(\crush, ~r3_crush.index, \mix, ~r3_mix.index);
-// Step 4: expose a setter (optional but keeps song files tidy)
+// Step 2: expose a setter (optional but keeps song files tidy)
 ~setR3 = { |crush, mix|
-    crush.notNil.if { ~r3_crush.set(crush) };
-    mix.notNil.if   { ~r3_mix.set(mix)     };
+    crush.notNil.if { ~r3_fx.set(\crush, crush) };
+    mix.notNil.if   { ~r3_fx.set(\mix,   mix)   };
 };
 
-// --- Pattern control of return FX buses ---
-// Write to the bus from a Pbind using \type \set on the bus index:
+// --- Pattern control of return FX params ---
+// Use \type \set targeting the synth's nodeID:
 Pdef(\r3mod, Pbind(
     \type, \set,
-    \id,   ~r3_crush.index,
-    \args, [\value],
-    \value, Pseq([4, 6, 8, 12], inf),
-    \dur,  2
+    \id,   ~r3_fx.nodeID,
+    \args, #[\crush, \mix],
+    \crush, Pseq([4, 6, 8, 12], inf),
+    \mix,   Pwhite(0.3, 0.9, inf),
+    \dur,   2
 )).play(~link);
-// Or use \func to hit multiple buses per event:
+// Same pattern works for r1/r2:
 Pdef(\r1sweep, Pbind(
-    \type, \func,
-    \func, { |e| ~setR1.(room: e[\room], damp: e[\damp]) },
+    \type, \set,
+    \id,   ~r1_fx.nodeID,
+    \args, #[\room, \damp],
     \room, Pwhite(0.5, 0.99, inf),
     \damp, Pseq([0.1, 0.4, 0.8], inf),
     \dur,  Pseq([4, 2, 2], inf)
@@ -144,4 +144,3 @@ Pdef(\r1sweep, Pbind(
 // --- Cleanup song-specific FX ---
 ~r3_fx.free;
 ~r3.effectgroup.freeAll;
-~r3_crush.free; ~r3_mix.free;

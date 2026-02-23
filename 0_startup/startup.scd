@@ -55,6 +55,7 @@ s.waitForBoot {
     // --- Core synths + sample loader (always load)
     "_synthdefs/synths_common.scd".loadRelative;
     "_synthdefs/analog_synthdefs.scd".loadRelative;
+    "_synthdefs/neutron.scd".loadRelative;
     "_includes/sample_loader.scd".loadRelative;
 
     // --- MIDI setup (cross-platform)
