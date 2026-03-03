@@ -22,7 +22,7 @@ case
     s.options.numOutputBusChannels = 36;
     s.options.numInputBusChannels = 0;
     s.options.sampleRate = 48000;
-    s.options.memSize = 8192;
+    s.options.memSize = 131072;
     s.options.numBuffers = 1024;
     s.options.maxNodes = 1024;
     s.options.blockSize = 64;
@@ -35,7 +35,7 @@ case
     s.options.numOutputBusChannels = 20;    // Scarlett 18i20 -> 10 stereo outs
     s.options.numInputBusChannels  = 20;    // up to 10 stereo ins
     s.options.sampleRate = 48000;
-    s.options.memSize = 8192;
+    s.options.memSize = 131072;
     s.options.numBuffers = 1024;
     s.options.maxNodes = 1024;
     s.options.blockSize = 64;
