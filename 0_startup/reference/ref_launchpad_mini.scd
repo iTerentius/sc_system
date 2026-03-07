@@ -26,6 +26,23 @@
 // Right-side buttons launch all pads in that row (scene)
 // Top buttons launch all pads in that column
 
+// --- Stateful FX send toggle (single pad, flashes when active) ---
+// Use a Tdef so the LP Mini watcher can track isPlaying for LED state.
+// protect{} ensures the send is freed when the Tdef is stopped.
+Tdef(\bd1_fxSend, {
+    protect {
+        ~bd1_t.free;
+        ~bd1_t = ~ensurePostSend.(~pbd1, ~r4, 1);
+        inf.wait;
+    } {
+        ~bd1_t.tryPerform(\free);
+        ~bd1_t = nil;
+    }
+});
+~lpBind.([8, 1], \bd1_fxSend, 35);  // pulses when on, static when off
+// The same Tdef can also be bound on the APC40 — both LEDs stay in sync:
+// ~apcBind.(32, \bd1_fxSend, 4, \amber, \green);
+
 // --- Clear grid ---
 ~lpMini[\clearGrid].();
 

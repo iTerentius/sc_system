@@ -68,5 +68,22 @@
 // Keys: \b<bank>_d<1-8>
 ~apcBindParam.(\b0_d1, { |x| ~r1_fx.set(\room, x) });
 
+// --- Stateful FX send toggle (single pad, color reflects active state) ---
+// Use a Tdef so ~apcToggleObj can track isPlaying for LED color.
+// protect{} ensures the send is freed when the Tdef is stopped.
+Tdef(\bd1_fxSend, {
+    protect {
+        ~bd1_t.free;
+        ~bd1_t = ~ensurePostSend.(~pbd1, ~r4, 1);
+        inf.wait;
+    } {
+        ~bd1_t.tryPerform(\free);
+        ~bd1_t = nil;
+    }
+});
+~apcBind.(32, \bd1_fxSend, 4, \amber, \green);  // amber=off, green=on
+// The same Tdef can be bound on the LP Mini too — both LEDs stay in sync:
+// ~lpBind.([8, 1], \bd1_fxSend, 35);
+
 // --- Repaint LEDs ---
 ~apcRepaintAll.();
