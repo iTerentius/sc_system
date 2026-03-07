@@ -148,7 +148,11 @@ if (~lpMini[\src].isNil) { "CRITICAL: LP Mini MIDI not found!".warn; };
                 if(obj.isKindOf(NodeProxy)) { isRunning = obj.isMonitoring } { isRunning = obj.isPlaying };
 
                 if(isRunning) {
-                    if(obj.respondsTo(\stopQ)) { obj.stopQ(quant) } { obj.stop };
+                    if(bindData[\onStop].notNil) {
+                        bindData[\onStop].value;
+                    } {
+                        if(obj.respondsTo(\stopQ)) { obj.stopQ(quant) } { obj.stop };
+                    };
                     "[%] Stopping: %".format(note, key).postln;
                 } {
                     if(obj.isKindOf(NodeProxy)) {
@@ -227,18 +231,18 @@ if (~lpMini[\src].isNil) { "CRITICAL: LP Mini MIDI not found!".warn; };
 }.play(AppClock);
 
 // --- BINDING API ---
-~lpBind = { |ref, key, color=nil, clock=nil, quant=nil|
+~lpBind = { |ref, key, color=nil, clock=nil, quant=nil, onStop=nil|
     var note, storedKey;
     if(ref.isArray) {
         note = ((9 - ref[0]) * 10) + ref[1];
     } {
         note = ref;
     };
-    
+
     if(key.isKindOf(Function) or: { key.isString }) { storedKey = key; } { storedKey = key.asSymbol; };
-    
+
     ~lpMini[\bindings][note] = (
-        key: storedKey, color: color, clock: clock, quant: quant
+        key: storedKey, color: color, clock: clock, quant: quant, onStop: onStop
     );
     
     ~lpMini[\ledCache][note] = nil; 

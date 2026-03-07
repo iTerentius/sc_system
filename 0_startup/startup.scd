@@ -74,6 +74,9 @@ s.waitForBoot {
     // --- Mixer channels (with conditional controller bindings)
     "_includes/mixer-channel-16s.scd".loadRelative;
 
+    // --- Helpers
+    "_includes/_helpers/helpers.scd".loadRelative;
+
     // --- LinkClock setup
     // 1. CLEAR existing clocks to kill Zombies
     if (~link.notNil) { ~link.clear; ~link = nil; };

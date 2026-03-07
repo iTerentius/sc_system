@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git add 0_startup/_synthdefs/analog_synthdefs.scd && git rebase --continue --no-edit 2>&1)",
+      "Bash(GIT_EDITOR=true git rebase:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(chmod +x:*)",
+      "Bash(cp:*)",
+      "Bash(cmake:*)"
+    ]
+  }
+}

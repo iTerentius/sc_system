@@ -98,8 +98,32 @@ sc_system/
 
 ### Launch Pad Mini MK3
 - `~lpMini` - Grid state dictionary
-- `~lpBind.(ref, key, color, clock, quant)` - Bind pad to pattern/Ndef/function
+- `~lpBind.(ref, key, color, clock, quant, onStop)` - Bind pad to pattern/Ndef/Tdef/function
 - `ref` = [row, col] or MIDI note 11-88
+- `onStop` (optional Function) - called instead of `obj.stop` when toggling off; use for Tdef cleanup (see below)
+
+#### Tdef FX send toggle pattern (single pad, LED pulses when active)
+SC's `protect` block does NOT fire when a Routine/Tdef is killed via `stop` — it's a hard primitive kill.
+To get reliable cleanup, use a while+flag loop so the Tdef exits naturally, and pass the flag-setter as `onStop`:
+
+```supercollider
+Tdef(\bd1_fx_1, {
+  protect {
+    ~bd1_fx_1_on = true;
+    ~bd1_fx_1.free;
+    ~bd1_fx_1 = ~ensurePostSend.(~pbd1, ~r1, 1);
+    while { ~bd1_fx_1_on } { 0.2.wait; }
+  } {
+    ~bd1_fx_1.tryPerform(\free);
+    ~bd1_fx_1 = nil;
+    ~bd1_fx_1_on = false;
+  }
+});
+~lpBind.([5, 1], \bd1_fx_1, 41, nil, nil, { ~bd1_fx_1_on = false });
+// LED pulses when Tdef isPlaying, static when stopped
+```
+
+**APC40 note:** `apc_pad_extensions.scd` does NOT yet have `onStop` support — needs the same router change as LP Mini before this pattern works there.
 
 ### APC40 Mk2
 - Pad triggering via loader in `_midi-ctrl/apc40/`
